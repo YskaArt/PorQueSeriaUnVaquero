@@ -30,6 +30,7 @@ public class RunnerEnemy : MonoBehaviour
     public void Eliminar()
     {
         // Aquí podés agregar una animación o efecto de muerte si querés
+        GoldManager.Instance.AddGold(1);
         Destroy(gameObject);
     }
 }
