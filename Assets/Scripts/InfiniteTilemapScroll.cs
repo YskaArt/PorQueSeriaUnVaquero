@@ -1,17 +1,20 @@
 ﻿using UnityEngine;
 using UnityEngine.Tilemaps;
+using System.Collections.Generic;
 
 public class InfiniteTilemapLoop : MonoBehaviour
 {
     [SerializeField] private Tilemap tilemap;
-    [SerializeField] private int mapWidthInTiles;             // Ancho del mapa en tiles 
-    [SerializeField] private int visibleHeightInTiles;       // Alto del área visible en tiles
-
+    [SerializeField] private int mapWidthInTiles;
+    [SerializeField] private int visibleHeightInTiles;
     [SerializeField] private float scrollSpeed = 2f;
-    
-    private float tileSize;             // Se obtiene desde el Grid
+    [SerializeField] private float resetThresholdY = -1000f; // ← Límite Y para reiniciar
+
+    private float tileSize;
     private float scrolledDistance = 0f;
     private int offsetRows = 0;
+
+    private Dictionary<Vector3Int, TileBase> initialTiles = new Dictionary<Vector3Int, TileBase>();
 
     public float ScrollSpeed
     {
@@ -19,36 +22,42 @@ public class InfiniteTilemapLoop : MonoBehaviour
         set => scrollSpeed = value;
     }
 
-    void Start()
+    private void Start()
     {
         tileSize = tilemap.layoutGrid.cellSize.y * tilemap.transform.lossyScale.y;
 
+        // Alinear con la grilla
         Vector3 pos = transform.position;
         pos.y = Mathf.Round(pos.y / tileSize) * tileSize;
         transform.position = pos;
+
+        SaveInitialLayout();
     }
 
-    void Update()
+    private void Update()
     {
         float delta = scrollSpeed * Time.deltaTime;
         scrolledDistance += delta;
 
-        // Mover visualmente el Tilemap de manera continua
         transform.position += Vector3.down * delta;
 
-        // Cuando se ha desplazado al menos 1 tile en altura
         if (scrolledDistance >= tileSize)
         {
             int steps = Mathf.FloorToInt(scrolledDistance / tileSize);
-
             for (int i = 0; i < steps; i++)
                 ScrollOneRow();
 
             scrolledDistance -= steps * tileSize;
         }
+
+        // 🚨 Verifica si debe reiniciarse
+        if (transform.position.y <= resetThresholdY)
+        {
+            ResetTilemap();
+        }
     }
 
-    void ScrollOneRow()
+    private void ScrollOneRow()
     {
         int bottomRow = offsetRows;
         int topRow = offsetRows + visibleHeightInTiles;
@@ -60,13 +69,37 @@ public class InfiniteTilemapLoop : MonoBehaviour
 
             TileBase tile = tilemap.GetTile(from);
 
-            // Copiamos el tile inferior y lo colocamos en la parte superior
             tilemap.SetTile(to, tile);
-
-            // Eliminamos el tile inferior
             tilemap.SetTile(from, null);
         }
 
         offsetRows++;
+    }
+
+    private void SaveInitialLayout()
+    {
+        initialTiles.Clear();
+        BoundsInt bounds = tilemap.cellBounds;
+
+        foreach (Vector3Int pos in bounds.allPositionsWithin)
+        {
+            TileBase tile = tilemap.GetTile(pos);
+            if (tile != null)
+                initialTiles[pos] = tile;
+        }
+    }
+
+    public void ResetTilemap()
+    {
+        tilemap.ClearAllTiles();
+
+        foreach (var pair in initialTiles)
+        {
+            tilemap.SetTile(pair.Key, pair.Value);
+        }
+
+        scrolledDistance = 0f;
+        offsetRows = 0;
+        transform.position = Vector3.zero;
     }
 }

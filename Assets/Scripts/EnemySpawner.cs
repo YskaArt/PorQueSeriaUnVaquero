@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -8,6 +8,9 @@ public class EnemySpawner : MonoBehaviour
     [SerializeField] private Transform[] spawnPoints; // 3 puntos (izq, centro, der)
     [SerializeField] private float minSpawnTime = 2f;
     [SerializeField] private float maxSpawnTime = 7f;
+
+    [SerializeField] private Transform worldContainer; // 👈 El contenedor del mundo
+
     public float MinSpawnTime
     {
         get => minSpawnTime;
@@ -19,6 +22,7 @@ public class EnemySpawner : MonoBehaviour
         get => maxSpawnTime;
         set => maxSpawnTime = value;
     }
+
     private void Start()
     {
         StartCoroutine(SpawnRoutine());
@@ -37,7 +41,8 @@ public class EnemySpawner : MonoBehaviour
             int randomEnemy = Random.Range(0, enemyPrefabs.Count);
             int randomPoint = Random.Range(0, spawnPoints.Length);
 
-            Instantiate(enemyPrefabs[randomEnemy], spawnPoints[randomPoint].position, Quaternion.identity);
+            // 👇 Hacemos que el enemigo sea hijo del WorldContainer
+            Instantiate(enemyPrefabs[randomEnemy], spawnPoints[randomPoint].position, Quaternion.identity, worldContainer);
         }
     }
 }

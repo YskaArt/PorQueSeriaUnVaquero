@@ -29,7 +29,7 @@ public class Upgrade : MonoBehaviour
 
     private void UpdateUI()
     {
-        levelText.text = "Lv. " + upgradeData.currentLevel;
+        levelText.text = $"Lv. {upgradeData.currentLevel}\n<color=#888>+{upgradeData.goldPerSecondPerLevel} gold/s</color>";
         costText.text = GoldManager.FormatNumber(upgradeData.GetCost()) + " G";
     }
 }
