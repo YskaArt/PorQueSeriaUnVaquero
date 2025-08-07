@@ -1,10 +1,28 @@
 fileFormatVersion: 2
-guid: 73df3181962a172498c5a85654f9ad65
+guid: a8e13a1c43066e34fa2818b5f73db129
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -3988769855312385993
-    second: Gold_0
+      213: -8162516308357919709
+    second: Por que dispararia un Revolver_0
+  - first:
+      213: 4520243954520608421
+    second: Por que dispararia un Revolver_1
+  - first:
+      213: -12345187067203901
+    second: Por que dispararia un Revolver_2
+  - first:
+      213: -3803865715683365737
+    second: Por que dispararia un Revolver_3
+  - first:
+      213: -2460615774440467932
+    second: Por que dispararia un Revolver_4
+  - first:
+      213: 1949027819421266295
+    second: Por que dispararia un Revolver_5
+  - first:
+      213: -6777474303668548136
+    second: Por que dispararia un Revolver_6
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -51,7 +69,7 @@ TextureImporter:
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 100
+  spritePixelsToUnits: 32
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -139,13 +157,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Gold_0
+      name: Por que dispararia un Revolver_2
       rect:
         serializedVersion: 2
-        x: 27
-        y: 31
-        width: 66
-        height: 78
+        x: 0
+        y: 0
+        width: 96
+        height: 96
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -154,8 +172,74 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 738a15333fa05a8c0800000000000000
-      internalID: -3988769855312385993
+      spriteID: 3ce6c262e1424dff0800000000000000
+      internalID: -12345187067203901
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Por que dispararia un Revolver_3
+      rect:
+        serializedVersion: 2
+        x: 96
+        y: 0
+        width: 96
+        height: 96
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 79ce76b0944f53bc0800000000000000
+      internalID: -3803865715683365737
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Por que dispararia un Revolver_4
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 0
+        width: 96
+        height: 132
+      alignment: 9
+      pivot: {x: 0.49411488, y: 0.37801754}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 422d0c37df22addd0800000000000000
+      internalID: -2460615774440467932
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Por que dispararia un Revolver_5
+      rect:
+        serializedVersion: 2
+        x: 288
+        y: 0
+        width: 96
+        height: 114
+      alignment: 9
+      pivot: {x: 0.49117216, y: 0.44300723}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 77175f1b9765c0b10800000000000000
+      internalID: 1949027819421266295
       vertices: []
       indices: 
       edges: []
@@ -164,7 +248,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: 36e7afb6c78b5534aad915752a8c35c2
     internalID: 0
     vertices: []
     indices: 
@@ -174,7 +258,12 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Gold_0: -3988769855312385993
+      Por que dispararia un Revolver_0: -8162516308357919709
+      Por que dispararia un Revolver_1: 4520243954520608421
+      Por que dispararia un Revolver_2: -12345187067203901
+      Por que dispararia un Revolver_3: -3803865715683365737
+      Por que dispararia un Revolver_4: -2460615774440467932
+      Por que dispararia un Revolver_5: 1949027819421266295
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -1,3 +1,4 @@
+using System;
 using TMPro;
 using UnityEngine;
 
@@ -8,19 +9,27 @@ public class GoldManager : MonoBehaviour
         get; private set;
     }
 
+    public event Action OnGoldChanged;
+
     [SerializeField] private TextMeshProUGUI goldText;
     [SerializeField] private TextMeshProUGUI goldPerSecondText;
 
     [SerializeField] private double gold;
     [SerializeField] private double goldPerSecond;
-    private float timer;
 
+    private float timer;
     public double CurrentGold => gold;
 
     private void Awake()
     {
-        if (Instance == null) Instance = this;
-        else Destroy(gameObject);
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
     }
 
     private void Update()
@@ -31,6 +40,7 @@ public class GoldManager : MonoBehaviour
             gold += goldPerSecond;
             timer = 0f;
             UpdateGoldUI();
+            OnGoldChanged?.Invoke();
         }
     }
 
@@ -38,6 +48,7 @@ public class GoldManager : MonoBehaviour
     {
         gold += amount;
         UpdateGoldUI();
+        OnGoldChanged?.Invoke();
     }
 
     public void AddGoldPerSecond(double amount)
@@ -48,8 +59,11 @@ public class GoldManager : MonoBehaviour
 
     private void UpdateGoldUI()
     {
-        goldText.text = FormatNumber(gold);
-        goldPerSecondText.text = FormatNumber(goldPerSecond) + "/s";
+        if (goldText != null)
+            goldText.text = FormatNumber(gold);
+
+        if (goldPerSecondText != null)
+            goldPerSecondText.text = FormatNumber(goldPerSecond) + "/s";
     }
 
     public static string FormatNumber(double number)
@@ -62,5 +76,11 @@ public class GoldManager : MonoBehaviour
             index++;
         }
         return number.ToString("0.##") + suffixes[index];
+    }
+    public void SetTextReferences(TextMeshProUGUI gold, TextMeshProUGUI goldPerSecond)
+    {
+        goldText = gold;
+        goldPerSecondText = goldPerSecond;
+        UpdateGoldUI();
     }
 }

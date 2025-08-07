@@ -10,7 +10,7 @@ public class EnemySpawner : MonoBehaviour
     [SerializeField] private float maxSpawnTime = 7f;
 
     [SerializeField] private Transform worldContainer; // 👈 El contenedor del mundo
-
+    private bool isSpawning;
     public float MinSpawnTime
     {
         get => minSpawnTime;
@@ -25,12 +25,13 @@ public class EnemySpawner : MonoBehaviour
 
     private void Start()
     {
+        isSpawning=true;
         StartCoroutine(SpawnRoutine());
     }
 
     private IEnumerator SpawnRoutine()
     {
-        while (true)
+        while (isSpawning)
         {
             float waitTime = Random.Range(minSpawnTime, maxSpawnTime);
             yield return new WaitForSeconds(waitTime);
@@ -44,5 +45,10 @@ public class EnemySpawner : MonoBehaviour
             // 👇 Hacemos que el enemigo sea hijo del WorldContainer
             Instantiate(enemyPrefabs[randomEnemy], spawnPoints[randomPoint].position, Quaternion.identity, worldContainer);
         }
+    }
+    public void StopSpawning()
+    {
+        isSpawning = false;
+        StopAllCoroutines(); // Opcional: detener cualquier corrutina activa
     }
 }

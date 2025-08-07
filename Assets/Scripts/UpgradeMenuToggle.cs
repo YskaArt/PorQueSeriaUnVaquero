@@ -5,6 +5,7 @@ public class UpgradeMenuToggle : MonoBehaviour
 {
     [SerializeField] private GameObject upgradeMenuPanel;
     [SerializeField] private Button toggleButton;
+    [SerializeField] private Upgrade[] upgrades;
 
     private void Start()
     {
@@ -15,5 +16,14 @@ public class UpgradeMenuToggle : MonoBehaviour
     private void ToggleMenu()
     {
         upgradeMenuPanel.SetActive(!upgradeMenuPanel.activeSelf);
+    }
+
+    public void RefreshUI()
+    {
+        foreach (var upgrade in upgrades)
+        {
+            if (upgrade != null)
+                upgrade.ForceUpdateUI();
+        }
     }
 }

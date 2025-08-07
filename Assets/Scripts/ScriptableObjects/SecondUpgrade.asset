@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 52246123c94e16d4fbab69feb83aaade, type: 3}
-  m_Name: FirstUpgrade
+  m_Name: SecondUpgrade
   m_EditorClassIdentifier: 
   upgradeName: 0
-  baseCost: 5
+  baseCost: 100
   costMultiplier: 1.75
-  goldPerSecondPerLevel: 0.1
+  goldPerSecondPerLevel: 5
   currentLevel: 0

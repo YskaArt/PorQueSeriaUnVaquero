@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class RunnerCharacter : MonoBehaviour
+public class PlayerMovement : MonoBehaviour
 {
     private Vector3[] lanes = new Vector3[3];
     private int currentLane = 1; // 0 = izquierda, 1 = centro, 2 = derecha
@@ -65,5 +65,10 @@ public class RunnerCharacter : MonoBehaviour
     {
         currentLane += direction;
         currentLane = Mathf.Clamp(currentLane, 0, 2);
+    }
+    public void CenterToMiddleLane()
+    {
+        currentLane = 1; // centro
+        transform.position = new Vector3(lanes[currentLane].x, transform.position.y, transform.position.z);
     }
 }
