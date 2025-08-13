@@ -1,0 +1,54 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class EnemySpawner : MonoBehaviour
+{
+    [SerializeField] private List<GameObject> enemyPrefabs = new List<GameObject>();
+    [SerializeField] private Transform[] spawnPoints; // 3 puntos (izq, centro, der)
+    [SerializeField] private float minSpawnTime = 2f;
+    [SerializeField] private float maxSpawnTime = 7f;
+
+    [SerializeField] private Transform worldContainer; // 👈 El contenedor del mundo
+    private bool isSpawning;
+    public float MinSpawnTime
+    {
+        get => minSpawnTime;
+        set => minSpawnTime = value;
+    }
+
+    public float MaxSpawnTime
+    {
+        get => maxSpawnTime;
+        set => maxSpawnTime = value;
+    }
+
+    private void Start()
+    {
+        isSpawning=true;
+        StartCoroutine(SpawnRoutine());
+    }
+
+    private IEnumerator SpawnRoutine()
+    {
+        while (isSpawning)
+        {
+            float waitTime = Random.Range(minSpawnTime, maxSpawnTime);
+            yield return new WaitForSeconds(waitTime);
+
+            if (enemyPrefabs.Count == 0 || spawnPoints.Length == 0)
+                yield break;
+
+            int randomEnemy = Random.Range(0, enemyPrefabs.Count);
+            int randomPoint = Random.Range(0, spawnPoints.Length);
+
+            // 👇 Hacemos que el enemigo sea hijo del WorldContainer
+            Instantiate(enemyPrefabs[randomEnemy], spawnPoints[randomPoint].position, Quaternion.identity, worldContainer);
+        }
+    }
+    public void StopSpawning()
+    {
+        isSpawning = false;
+        StopAllCoroutines(); // Opcional: detener cualquier corrutina activa
+    }
+}
