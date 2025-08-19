@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 public class MiniGameController : MonoBehaviour
 {
@@ -8,14 +9,17 @@ public class MiniGameController : MonoBehaviour
     [SerializeField] private PlayerShootController playerShooter;
     [SerializeField] private PlayerMovement playerMovement;
     [SerializeField] private GameStartManager sceneManager;
-    [SerializeField] private string nextSceneName = "NextScene";
+
+    [Header("Escenas siguientes")]
+    [SerializeField] private string[] nextScenes; // 4 escenas posibles
 
     public void StartMiniGame()
     {
+
         // Detener el tilemap
         tilemapScroller.ScrollSpeed = 0f;
 
-        // Posicionar jugador en el carril central
+        // Centrar jugador
         playerMovement.CenterToMiddleLane();
 
         // Activar jefe y moverlo
@@ -31,7 +35,9 @@ public class MiniGameController : MonoBehaviour
         playerShooter.StopShooting();
         playerShooter.MoveOut(() =>
         {
-            sceneManager.EndSceneAndLoadNext(nextSceneName);
+            // Elegir una escena aleatoria
+            string randomScene = nextScenes[Random.Range(0, nextScenes.Length)];
+            sceneManager.EndSceneAndLoadNext(randomScene);
         });
     }
 }

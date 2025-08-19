@@ -6,25 +6,22 @@ public class HorseSkillController : MonoBehaviour
 {
     [Header("Duraciones")]
     [SerializeField] private float skillDuration = 30f;
-    [SerializeField] private float cooldownDuration = 180f;
 
     [Header("UI")]
     [SerializeField] private Button horseButton;
-    [SerializeField] private Image cooldownImage; // Image con Fill 360 radial
+    [SerializeField] private Image cooldownImage;
 
     [Header("Referencia al Player")]
     [SerializeField] private Animator playerAnimator;
 
     [Header("Enemigos")]
-    [SerializeField] private EnemySpawner enemySpawner; // Referencia al spawner
+    [SerializeField] private EnemySpawner enemySpawner;
     [SerializeField] private float spawnMultiplier = 0.5f;
 
     [Header("Velocidad Afectada")]
     [SerializeField] private InfiniteTilemapLoop tilemapMover;
     [SerializeField] private float speedMultiplier = 3f;
 
-    private float currentCooldown = 0f;
-    private bool isOnCooldown = false;
     private float originalScrollSpeed;
     private float originalMinSpawn, originalMaxSpawn;
 
@@ -33,7 +30,6 @@ public class HorseSkillController : MonoBehaviour
         horseButton.onClick.AddListener(ActivateHorse);
         cooldownImage.fillAmount = 0f;
 
-        // Guardamos valores originales
         originalScrollSpeed = tilemapMover.ScrollSpeed;
         originalMinSpawn = enemySpawner.MinSpawnTime;
         originalMaxSpawn = enemySpawner.MaxSpawnTime;
@@ -41,35 +37,31 @@ public class HorseSkillController : MonoBehaviour
 
     private void Update()
     {
-        if (isOnCooldown)
+        // Actualizar UI del cooldown
+        if (!HorseCooldownManager.Instance.IsReady())
         {
-            currentCooldown -= Time.deltaTime;
-            cooldownImage.fillAmount = currentCooldown / cooldownDuration;
-
-            if (currentCooldown <= 0f)
-            {
-                isOnCooldown = false;
-                horseButton.interactable = true;
-                cooldownImage.fillAmount = 0f;
-            }
+            horseButton.interactable = false;
+            cooldownImage.fillAmount = HorseCooldownManager.Instance.GetCooldownProgress();
+        }
+        else
+        {
+            horseButton.interactable = true;
+            cooldownImage.fillAmount = 0f;
         }
     }
 
     private void ActivateHorse()
     {
-        if (isOnCooldown) return;
+        if (!HorseCooldownManager.Instance.IsReady()) return;
 
+        HorseCooldownManager.Instance.StartCooldown();
         horseButton.interactable = false;
-        currentCooldown = cooldownDuration;
-        isOnCooldown = true;
 
         // Activar animación Horse
         playerAnimator.SetBool("Horse", true);
 
-        // Aumentar velocidad tilemap y enemigos
+        // Aumentar velocidad tilemap y reducir spawn
         tilemapMover.ScrollSpeed = originalScrollSpeed * speedMultiplier;
-
-        // Reducir tiempo de spawn
         enemySpawner.MinSpawnTime = originalMinSpawn * spawnMultiplier;
         enemySpawner.MaxSpawnTime = originalMaxSpawn * spawnMultiplier;
 
@@ -80,7 +72,7 @@ public class HorseSkillController : MonoBehaviour
     {
         yield return new WaitForSeconds(skillDuration);
 
-        // Volver todo a normal
+        // Volver a valores originales
         tilemapMover.ScrollSpeed = originalScrollSpeed;
         enemySpawner.MinSpawnTime = originalMinSpawn;
         enemySpawner.MaxSpawnTime = originalMaxSpawn;
