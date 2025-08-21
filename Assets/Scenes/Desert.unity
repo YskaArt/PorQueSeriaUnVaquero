@@ -2402,7 +2402,7 @@ Camera:
   far clip plane: 1000
   field of view: 34
   orthographic: 1
-  orthographic size: 11.575
+  orthographic size: 12.66
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -2446,7 +2446,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_ComponentVersion: 1
-  m_AssetsPPU: 60
+  m_AssetsPPU: 100
   m_RefResolutionX: 640
   m_RefResolutionY: 360
   m_CropFrame: 0
@@ -3018,6 +3018,7 @@ MonoBehaviour:
   playerShooter: {fileID: 7698876074843814251}
   playerMovement: {fileID: 7698876074843814250}
   sceneManager: {fileID: 575271537}
+  horseSkill: {fileID: 7698876074843814252}
   nextScenes:
   - Desert
   - Forest
@@ -5664,6 +5665,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 887bddc46ebc1e64499486ec997ccc91, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &7698876074843814252 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8224471605282392135, guid: 53e7e4f9ed227db4885bee42f544bac2, type: 3}
+  m_PrefabInstance: {fileID: 7698876074843814249}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1069634763}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5bc1caa7db999804ca3dc9c19e0500dd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1660057539 &9223372036854775807

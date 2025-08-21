@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -25,6 +25,10 @@ public class HorseSkillController : MonoBehaviour
     private float originalScrollSpeed;
     private float originalMinSpawn, originalMaxSpawn;
 
+    private Coroutine activeSkillCoroutine;
+    private bool isSkillActive = false;
+    private bool isMiniGameActive = false;
+
     private void Start()
     {
         horseButton.onClick.AddListener(ActivateHorse);
@@ -37,46 +41,74 @@ public class HorseSkillController : MonoBehaviour
 
     private void Update()
     {
-        // Actualizar UI del cooldown
-        if (!HorseCooldownManager.Instance.IsReady())
+        if (!HorseCooldownManager.Instance.IsReady() || isMiniGameActive)
         {
             horseButton.interactable = false;
-            cooldownImage.fillAmount = HorseCooldownManager.Instance.GetCooldownProgress();
         }
         else
         {
             horseButton.interactable = true;
-            cooldownImage.fillAmount = 0f;
         }
+
+        cooldownImage.fillAmount = HorseCooldownManager.Instance.GetCooldownProgress();
     }
 
     private void ActivateHorse()
     {
-        if (!HorseCooldownManager.Instance.IsReady()) return;
+        if (!HorseCooldownManager.Instance.IsReady() || isMiniGameActive) return;
 
         HorseCooldownManager.Instance.StartCooldown();
         horseButton.interactable = false;
 
-        // Activar animaci�n Horse
-        playerAnimator.SetBool("Horse", true);
+        isSkillActive = true;
 
-        // Aumentar velocidad tilemap y reducir spawn
+        // Animación y velocidad
+        playerAnimator.SetBool("Horse", true);
         tilemapMover.ScrollSpeed = originalScrollSpeed * speedMultiplier;
         enemySpawner.MinSpawnTime = originalMinSpawn * spawnMultiplier;
         enemySpawner.MaxSpawnTime = originalMaxSpawn * spawnMultiplier;
 
-        StartCoroutine(HorseDurationCoroutine());
+        activeSkillCoroutine = StartCoroutine(HorseDurationCoroutine());
     }
 
     private IEnumerator HorseDurationCoroutine()
     {
         yield return new WaitForSeconds(skillDuration);
+        EndHorseSkill();
+    }
 
-        // Volver a valores originales
+    private void EndHorseSkill()
+    {
+        if (!isSkillActive) return;
+
+        isSkillActive = false;
+
         tilemapMover.ScrollSpeed = originalScrollSpeed;
         enemySpawner.MinSpawnTime = originalMinSpawn;
         enemySpawner.MaxSpawnTime = originalMaxSpawn;
 
         playerAnimator.SetBool("Horse", false);
+    }
+
+    // ✅ Llamado desde MiniGameController cuando inicia el minigame
+    public void ForceStopHorseSkill()
+    {
+        if (activeSkillCoroutine != null)
+        {
+            StopCoroutine(activeSkillCoroutine);
+            activeSkillCoroutine = null;
+        }
+        EndHorseSkill();
+    }
+
+    // ✅ Llamado desde MiniGameController cuando inicia/termina
+    public void SetMiniGameActive(bool state)
+    {
+        isMiniGameActive = state;
+
+        if (isMiniGameActive && isSkillActive)
+        {
+            ForceStopHorseSkill();
+        }
     }
 }
