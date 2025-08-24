@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 52246123c94e16d4fbab69feb83aaade, type: 3}
   m_Name: FirstUpgrade
   m_EditorClassIdentifier: 
-  upgradeName: 0
+  upgradeName: Sombrero Vaquero
   baseCost: 5
   costMultiplier: 1.75
   goldPerSecondPerLevel: 0.1
