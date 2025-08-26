@@ -1,44 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
-  <application>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.HKEntertainment.CowboyIdleFrontier"
+    android:versionName="1.0.0">
 
-    <!-- Play Games Services - project app id (usa string resource) -->
-    <meta-data
-        android:name="com.google.android.gms.games.APP_ID"
-        tools:replace="android:value"
-        android:value="@string/app_id" />
+  <!-- SDK mínimo y target -->
+  <uses-sdk
+      android:minSdkVersion="23"
+      android:targetSdkVersion="34" />
 
-    <!-- Google Play services version check (normalmente provisto por la dependencia) -->
-    <meta-data
-        android:name="com.google.android.gms.version"
-        tools:replace="android:value"
-        android:value="@integer/google_play_services_version" />
+  <!-- Permisos necesarios -->
+  <uses-permission android:name="android.permission.INTERNET"/>
+  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+      android:maxSdkVersion="32"/>
+  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+      android:maxSdkVersion="29"/>
 
-    <!-- Nearby Connections SERVICE_ID (usás Nearby según lo que indicás) -->
-    <meta-data
-        android:name="com.google.android.gms.nearby.connection.SERVICE_ID"
-        android:value="com.HKEntertainment.CowboyIdleFrontier" />
+  <application
+      android:name="com.unity3d.player.UnityPlayerApplication"
+      android:label="Cowboy Idle Frontier"
+      android:icon="@mipmap/app_icon"
+      android:theme="@style/UnityThemeSelector">
 
-    <!--Used when Application Entry is set to Activity, otherwise remove this activity block-->
+    <!-- Activity principal de Unity -->
     <activity android:name="com.unity3d.player.UnityPlayerActivity"
-              android:theme="@style/UnityThemeSelector">
-      <!-- Quité el intent-filter MAIN/LAUNCHER de esta activity para evitar tener dos launchers -->
-      <meta-data android:name="unityplayer.UnityActivity" android:value="true" />
+        android:screenOrientation="landscape"
+        android:launchMode="singleTask"
+        android:exported="true"
+        android:theme="@style/UnityThemeSelector"
+        android:configChanges="locale|fontScale|keyboard|keyboardHidden|mcc|mnc|navigation|orientation|screenLayout|screenSize|smallestScreenSize|uiMode"
+        android:hardwareAccelerated="true">
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN"/>
+        <category android:name="android.intent.category.LAUNCHER"/>
+      </intent-filter>
     </activity>
 
-    <!--Used when Application Entry is set to GameActivity, otherwise remove this activity block-->
-    <activity android:name="com.unity3d.player.UnityPlayerGameActivity"
-              android:theme="@style/BaseUnityGameActivityTheme">
-      <!-- Dejé esta activity como LAUNCHER por defecto -->
-      <intent-filter>
-        <action android:name="android.intent.action.MAIN" />
-        <category android:name="android.intent.category.LAUNCHER" />
-      </intent-filter>
-      <meta-data android:name="unityplayer.UnityActivity" android:value="true" />
-      <meta-data android:name="android.app.lib_name" android:value="game" />
-    </activity>
+    <!-- Servicios de Google Play Games -->
+    <meta-data android:name="com.google.android.gms.games.APP_ID"
+        android:value="@string/games_app_id"/>
+
+    <!-- Servicios de anuncios (AdMob) -->
+    <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID"
+        android:value="@string/admob_app_id"/>
 
   </application>
 </manifest>
