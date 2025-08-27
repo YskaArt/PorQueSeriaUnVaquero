@@ -25,8 +25,6 @@ public class Upgrade : MonoBehaviour
     // ESTADO INTERNO
     // ==========================
     private int selectedQuantity = 1; // Cantidad a comprar (1, 10, 50 o "MAX" -> se calcula)
-    private static readonly Color32 RedBright = new Color32(255, 76, 76, 255); // #FF4C4C
-    private static readonly Color32 CanBuyGreen = new Color32(0, 200, 0, 255);
 
     // ==========================
     // MÉTODO: Awake()
@@ -45,7 +43,10 @@ public class Upgrade : MonoBehaviour
     private void OnEnable()
     {
         if (upgradeData != null)
+        {
             upgradeData.OnLevelChanged += UpdateUI;
+            upgradeData.OnBonusPurchased += OnBonusPurchased;
+        }
 
         if (GoldManager.Instance != null)
             GoldManager.Instance.OnGoldChanged += UpdateUI;
@@ -56,7 +57,10 @@ public class Upgrade : MonoBehaviour
     private void OnDisable()
     {
         if (upgradeData != null)
+        {
             upgradeData.OnLevelChanged -= UpdateUI;
+            upgradeData.OnBonusPurchased -= OnBonusPurchased;
+        }
 
         if (GoldManager.Instance != null)
             GoldManager.Instance.OnGoldChanged -= UpdateUI;
@@ -82,16 +86,27 @@ public class Upgrade : MonoBehaviour
             {
                 upgradeData.LevelUp();
                 GoldManager.Instance.AddGoldPerSecond(upgradeData.goldPerSecondPerLevel);
+                GameSaveManager.Instance.SaveGame();
             }
             UpdateUI();
         }
-        // Si no alcanza el oro, el UI ya refleja el progreso; no es necesario log adicional
+    }
+
+    private void OnBonusPurchased()
+    {
+        double baseOps = upgradeData.goldPerSecondPerLevel * upgradeData.currentLevel;
+        double effectiveOps = upgradeData.GetEffectiveOPS();
+        double delta = effectiveOps - baseOps;
+        if (delta > 0)
+            GoldManager.Instance.AddGoldPerSecond(delta);
+
+
+        UpdateUI();
     }
 
     // ==========================
     // MÉTODO: SetQuantityToBuy()
     // Cambia la cantidad deseada de compra: 1, 10, 50 o -1 (MAX)
-    // Llamado desde el controlador del menú (UpgradeMenuController)
     // ==========================
     public void SetQuantityToBuy(int quantity)
     {
@@ -156,7 +171,10 @@ public class Upgrade : MonoBehaviour
             upgradeNameText.text = upgradeData.upgradeName;
 
         if (levelText != null)
-            levelText.text = $"Lv. {upgradeData.currentLevel}\n<color=#888>+{upgradeData.goldPerSecondPerLevel} Ops</color>";
+        {
+            string opsFormatted = GoldManager.FormatNumber(upgradeData.goldPerSecondPerLevel);
+            levelText.text = $"Lv. {upgradeData.currentLevel}\n<color=#888>+{opsFormatted} OPS</color>";
+        }
 
         // Cantidad efectiva a mostrar (si es MAX, calcular en vivo)
         int displayQty = (selectedQuantity < 0) ? GetMaxAffordableLevels() : selectedQuantity;
@@ -166,13 +184,13 @@ public class Upgrade : MonoBehaviour
         {
             if (displayQty <= 0)
             {
-                // No alcanza ni un nivel
                 priceText.text = "No alcanzas niveles";
             }
             else
             {
                 double totalCost = GetTotalCost(displayQty);
-                priceText.text = $"Buy {displayQty}\n {GoldManager.FormatNumber(totalCost)} G";
+                string costFormatted = GoldManager.FormatNumber(totalCost);
+                priceText.text = $"Buy {displayQty}\nCosto: {costFormatted} G";
             }
         }
 
@@ -182,7 +200,7 @@ public class Upgrade : MonoBehaviour
 
     // ==========================
     // MÉTODO: UpdateButtonVisuals()
-    // Controla interactuable, y fill del botón según oro/costo
+    // Controla interactuable y fill del botón según oro/costo
     // ==========================
     private void UpdateButtonVisuals(int displayQty)
     {
@@ -192,10 +210,7 @@ public class Upgrade : MonoBehaviour
         {
             upgradeButton.interactable = false;
             if (fillImage != null)
-            {
                 fillImage.fillAmount = 0f;
-                
-            }
             return;
         }
 
@@ -209,11 +224,8 @@ public class Upgrade : MonoBehaviour
         {
             float progress = (totalCost <= 0) ? 1f : Mathf.Clamp01((float)(gold / totalCost));
             fillImage.fillAmount = progress;
-
-            
         }
     }
-
 
     // ==========================
     // MÉTODO: ForceUpdateUI()

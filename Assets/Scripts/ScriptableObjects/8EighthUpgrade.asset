@@ -10,10 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 52246123c94e16d4fbab69feb83aaade, type: 3}
-  m_Name: SecondUpgrade
+  m_Name: 8EighthUpgrade
   m_EditorClassIdentifier: 
-  upgradeName: 0
-  baseCost: 100
-  costMultiplier: 1.75
-  goldPerSecondPerLevel: 5
+  upgradeName: 8
+  baseCost: 580000000
+  costMultiplier: 1.31
+  goldPerSecondPerLevel: 160000
   currentLevel: 0
+  hasBonus: 0
+  bonusUnlockLevel: 25
+  bonusCost: 10000
+  bonusMultiplier: 2
+  bonusPurchased: 0

@@ -118,7 +118,7 @@ public class GoldManager : MonoBehaviour
     // ==========================
     public static string FormatNumber(double number)
     {
-        string[] suffixes = { "", "K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc" };
+        string[] suffixes = { "", "K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "Sin", "De", "Ud", "Dd","Td","Qt","Qd","Sd","St","Od","Nd","Vg","Uv","Dv","Tv" };
         int index = 0;
         while (number >= 1000 && index < suffixes.Length - 1)
         {

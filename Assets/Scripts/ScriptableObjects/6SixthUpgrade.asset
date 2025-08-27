@@ -10,10 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 52246123c94e16d4fbab69feb83aaade, type: 3}
-  m_Name: FirstUpgrade
+  m_Name: 6SixthUpgrade
   m_EditorClassIdentifier: 
-  upgradeName: Sombrero Vaquero
-  baseCost: 5
-  costMultiplier: 1.75
-  goldPerSecondPerLevel: 0.1
+  upgradeName: 6
+  baseCost: 1200000
+  costMultiplier: 1.25
+  goldPerSecondPerLevel: 4000
   currentLevel: 0
+  hasBonus: 0
+  bonusUnlockLevel: 25
+  bonusCost: 10000
+  bonusMultiplier: 2
+  bonusPurchased: 0
