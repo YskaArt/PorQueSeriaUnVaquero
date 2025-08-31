@@ -1,6 +1,7 @@
 using System;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GoldManager : MonoBehaviour
 {
@@ -41,9 +42,10 @@ public class GoldManager : MonoBehaviour
             Destroy(gameObject);
             return;
         }
-
+        UpdateGoldUI();
         Instance = this;
         DontDestroyOnLoad(gameObject);
+        SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
     // ==========================
@@ -61,7 +63,19 @@ public class GoldManager : MonoBehaviour
             OnGoldChanged?.Invoke();
         }
     }
+    private void OnDestroy()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
 
+    /// <summary>
+    /// Cuando carga una escena, busca y asigna los textos automáticamente.
+    /// </summary>
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        AssignUIReferences();
+        UpdateGoldUI();
+    }
     // ==========================
     // MÉTODO: AddGold()
     // Suma oro inmediato (por ejemplo al matar enemigos)
@@ -105,6 +119,17 @@ public class GoldManager : MonoBehaviour
     // ==========================
     private void UpdateGoldUI()
     {
+        if (goldText == null || goldPerSecondText == null)
+        {
+            // Buscar dinámicamente si faltan referencias
+            var uiTexts = UnityEngine.Object.FindObjectsByType<TextMeshProUGUI>(FindObjectsSortMode.None);
+            foreach (var text in uiTexts)
+            {
+                if (text.name == "GoldText") goldText = text;
+                if (text.name == "GoldPerSecondText") goldPerSecondText = text;
+            }
+        }
+
         if (goldText != null)
             goldText.text = FormatNumber(gold);
 
@@ -112,13 +137,15 @@ public class GoldManager : MonoBehaviour
             goldPerSecondText.text = FormatNumber(goldPerSecond) + " Ops";
     }
 
+
+
     // ==========================
     // MÉTODO: FormatNumber()
     // Convierte números grandes en formato compacto (K, M, B, etc.)
     // ==========================
     public static string FormatNumber(double number)
     {
-        string[] suffixes = { "", "K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "Sin", "De", "Ud", "Dd","Td","Qt","Qd","Sd","St","Od","Nd","Vg","Uv","Dv","Tv" };
+        string[] suffixes = { "", "K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "Sin", "De", "Ud", "Dd", "Td", "Qt", "Qd", "Sd", "St", "Od", "Nd", "Vg", "Uv", "Dv", "Tv" };
         int index = 0;
         while (number >= 1000 && index < suffixes.Length - 1)
         {
@@ -131,11 +158,38 @@ public class GoldManager : MonoBehaviour
     // ==========================
     // MÉTODO: SetTextReferences()
     // Permite reasignar textos desde otro script de UI (ej: UIManager)
-    // ==========================
+    // ==========================}
+    /// <summary>
+    /// Busca en la escena los objetos que deberían mostrar el oro y OPS.
+    /// </summary>
+    private void AssignUIReferences()
+    {
+        if (goldText == null)
+        {
+            GameObject goldObj = GameObject.FindWithTag("GoldText");
+            if (goldObj != null)
+                goldText = goldObj.GetComponent<TextMeshProUGUI>();
+        }
+
+        if (goldPerSecondText == null)
+        {
+            GameObject opsObj = GameObject.FindWithTag("GoldPerSecondText");
+            if (opsObj != null)
+                goldPerSecondText = opsObj.GetComponent<TextMeshProUGUI>();
+        }
+    }
+
     public void SetTextReferences(TextMeshProUGUI gold, TextMeshProUGUI goldPerSecond)
     {
         goldText = gold;
         goldPerSecondText = goldPerSecond;
         UpdateGoldUI();
     }
+
+    public void SetGoldPerSecond(double value)
+    {
+        goldPerSecond = value;
+        UpdateGoldUI();
+    }
 }
+

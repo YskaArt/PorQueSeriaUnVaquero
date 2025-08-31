@@ -4384,7 +4384,7 @@ GameObject:
   - component: {fileID: 356319920}
   - component: {fileID: 356319919}
   m_Layer: 5
-  m_Name: Oro
+  m_Name: GoldText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -17018,7 +17018,7 @@ GameObject:
   - component: {fileID: 1533796974}
   - component: {fileID: 1533796973}
   m_Layer: 5
-  m_Name: OroPorSegundo
+  m_Name: GoldPerSecondText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -17488,6 +17488,23 @@ MonoBehaviour:
   toggleButton: {fileID: 1584057374}
   upgrades:
   - {fileID: 87668361}
+  - {fileID: 1354340424}
+  - {fileID: 88855897}
+  - {fileID: 1019740891}
+  - {fileID: 1931416948}
+  - {fileID: 436156000}
+  - {fileID: 1563400649}
+  - {fileID: 140663410}
+  - {fileID: 2050202375}
+  - {fileID: 462365729}
+  - {fileID: 783285991}
+  - {fileID: 264278833}
+  - {fileID: 177972368}
+  - {fileID: 774383692}
+  - {fileID: 1947114531}
+  - {fileID: 951789909}
+  - {fileID: 1021132002}
+  - {fileID: 2002099228}
 --- !u!114 &1584057374
 MonoBehaviour:
   m_ObjectHideFlags: 0

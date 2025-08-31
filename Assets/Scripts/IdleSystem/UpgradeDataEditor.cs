@@ -1,6 +1,6 @@
 using UnityEngine;
 using UnityEditor;
-
+/*
 [CustomEditor(typeof(UpgradeData))]
 public class UpgradeDataEditor : Editor
 {
@@ -31,3 +31,4 @@ public class UpgradeDataEditor : Editor
         }
     }
 }
+*/

@@ -99,26 +99,32 @@ public class GameSaveManager : MonoBehaviour
             GoldManager.Instance.AddGold(saveData.gold - GoldManager.Instance.CurrentGold);
         }
 
-        // Restaurar niveles de upgrades y recalcular OPS
+        // Restaurar niveles y recalcular OPS total
+        double totalOPS = 0;
+
         foreach (var savedUpgrade in saveData.upgrades)
         {
             foreach (var upgrade in allUpgrades)
             {
                 if (upgrade.upgradeName == savedUpgrade.upgradeName)
                 {
-                    int diff = savedUpgrade.currentLevel - upgrade.currentLevel;
                     upgrade.currentLevel = savedUpgrade.currentLevel;
 
-                    if (diff > 0 && GoldManager.Instance != null)
-                    {
-                        GoldManager.Instance.AddGoldPerSecond(upgrade.goldPerSecondPerLevel * diff);
-                    }
+                    // Sumar OPS total según el nivel actual
+                    totalOPS += upgrade.goldPerSecondPerLevel * upgrade.currentLevel;
                 }
             }
         }
 
+        // Establecer OPS correcto (reseteando antes)
+        if (GoldManager.Instance != null)
+        {
+            GoldManager.Instance.SetGoldPerSecond(totalOPS);
+        }
+
         Debug.Log("✅ Juego cargado: " + json);
     }
+
 
     // ==========================
     // MÉTODO: ResetGame()

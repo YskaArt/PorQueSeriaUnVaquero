@@ -988,10 +988,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b9308175be46c604ab5c7ccada0c1af2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  upgradeMenuPanel: {fileID: 0}
+  upgradeMenuPanel: {fileID: 502420911}
   toggleButton: {fileID: 89463763}
   upgrades:
-  - {fileID: 0}
+  - {fileID: 885345960}
+  - {fileID: 437501766}
+  - {fileID: 72726041}
+  - {fileID: 1538785486}
+  - {fileID: 658432925}
+  - {fileID: 275605267}
+  - {fileID: 766145909}
+  - {fileID: 1218457211}
+  - {fileID: 1608514265}
+  - {fileID: 751479709}
+  - {fileID: 1449307161}
+  - {fileID: 1527605348}
+  - {fileID: 2140943272}
+  - {fileID: 397035431}
+  - {fileID: 452716055}
+  - {fileID: 1341735276}
+  - {fileID: 1853222331}
+  - {fileID: 1318986547}
 --- !u!114 &89463763
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6572,7 +6589,7 @@ GameObject:
   - component: {fileID: 510447345}
   - component: {fileID: 510447344}
   m_Layer: 5
-  m_Name: OroPorSegundo
+  m_Name: GoldPerSecondText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -11968,7 +11985,7 @@ GameObject:
   - component: {fileID: 1061461655}
   - component: {fileID: 1061461654}
   m_Layer: 5
-  m_Name: Oro
+  m_Name: GoldText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
