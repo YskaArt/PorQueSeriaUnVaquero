@@ -1,14 +1,13 @@
-using UnityEngine;
 using System;
+using UnityEngine;
+using UnityEngine.SceneManagement;
 using GoogleMobileAds.Api;
 
 public class AdManager : MonoBehaviour
 {
     public static AdManager Instance;
 
-    // ola papu, las ID cambialas x las que te de Admob]
-    //Nota de que ya cambie las ID papu
-
+    // Tus IDs
     private const string BANNER_ID = "ca-app-pub-8408315673471628/8656782151";
     private const string INTERSTITIAL_ID = "ca-app-pub-8408315673471628/5911199317";
     private const string REWARDED_ID = "ca-app-pub-8408315673471628/3285035971";
@@ -17,127 +16,266 @@ public class AdManager : MonoBehaviour
     private RewardedAd rewardedAd;
     private BannerView bannerView;
 
-    void Awake()
-    {
-        if (Instance == null)
-            Instance = this;
-        else if (Instance != this)
-            Destroy(gameObject);
+    private bool isShowingInterstitial = false;
+    private Action interstitialCallback;
 
+    private void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        Instance = this;
         DontDestroyOnLoad(gameObject);
+
+        SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
-    void Start()
+    private void Start()
     {
-        MobileAds.Initialize(initStatus => {
-            Debug.Log("Google Mobile Ads inicializado.");
+        MobileAds.Initialize(initStatus =>
+        {
+            Debug.Log("[AdManager] Google Mobile Ads inicializado.");
             LoadInterstitial();
             LoadRewarded();
             ShowBanner();
         });
     }
 
-    // -------- INTERSTITIAL --------
+    private void OnDestroy()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        // Al cargar cualquier escena mostramos el banner
+        ShowBanner();
+    }
+
+    // ----------------------------
+    // INTERSTITIAL
+    // ----------------------------
     private void LoadInterstitial()
     {
         AdRequest request = new AdRequest();
+
         InterstitialAd.Load(INTERSTITIAL_ID, request, (InterstitialAd ad, LoadAdError error) =>
         {
             if (error != null || ad == null)
             {
-                Debug.LogError("Falló cargar Interstitial: " + error);
+                Debug.LogWarning("[AdManager] Falló cargar Interstitial: " + error);
+                interstitialAd = null;
                 return;
             }
+
+            if (interstitialAd != null)
+            {
+                try { interstitialAd.Destroy(); } catch { }
+            }
+
             interstitialAd = ad;
-            Debug.Log("Interstitial cargado correctamente.");
+            Debug.Log("[AdManager] Interstitial cargado correctamente.");
         });
     }
 
     public void ShowInterstitial(Action onClosed)
     {
-        Debug.Log("[AdManager] Simulando interstitial en Editor.");
-        onClosed?.Invoke();
+#if UNITY_EDITOR
+        StartCoroutine(SimulateInterstitialCoroutine(onClosed));
+        return;
+#else
+        if (isShowingInterstitial)
+        {
+            Debug.Log("[AdManager] Ya hay un interstitial mostrándose.");
+            onClosed?.Invoke();
+            return;
+        }
+
         if (interstitialAd != null && interstitialAd.CanShowAd())
         {
-            interstitialAd.OnAdFullScreenContentClosed += () => {
-                Debug.Log("Interstitial cerrado.");
-                onClosed?.Invoke();
-                LoadInterstitial(); // recargar
-            };
-            interstitialAd.Show();
+            isShowingInterstitial = true;
+            interstitialCallback = onClosed;
+
+            interstitialAd.OnAdFullScreenContentClosed += HandleInterstitialClosed;
+            interstitialAd.OnAdFullScreenContentFailed += HandleInterstitialFailed;
+
+            try
+            {
+                interstitialAd.Show();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("[AdManager] Error al mostrar interstitial: " + ex);
+                HandleInterstitialClosedFallback();
+            }
         }
         else
         {
-            Debug.Log("Interstitial no disponible.");
+            Debug.Log("[AdManager] Interstitial no disponible — ejecutando callback inmediato.");
             onClosed?.Invoke();
             LoadInterstitial();
         }
+#endif
     }
 
-    // -------- REWARDED --------
+    private void HandleInterstitialClosed()
+    {
+        CleanupInterstitialEvents();
+
+        var cb = interstitialCallback;
+        interstitialCallback = null;
+
+        isShowingInterstitial = false;
+
+        LoadInterstitial();
+
+        // Después de cerrar, mostramos el banner de nuevo
+        ShowBanner();
+
+        cb?.Invoke();
+    }
+
+    private void HandleInterstitialFailed(AdError error)
+    {
+        Debug.LogWarning("[AdManager] Interstitial fallo full-screen: " + error);
+        HandleInterstitialClosedFallback();
+    }
+
+    private void HandleInterstitialClosedFallback()
+    {
+        CleanupInterstitialEvents();
+        var cb = interstitialCallback;
+        interstitialCallback = null;
+        isShowingInterstitial = false;
+
+        LoadInterstitial();
+
+        // Mostramos banner después del fallback también
+        ShowBanner();
+
+        cb?.Invoke();
+    }
+
+    private void CleanupInterstitialEvents()
+    {
+        if (interstitialAd != null)
+        {
+            interstitialAd.OnAdFullScreenContentClosed -= HandleInterstitialClosed;
+            interstitialAd.OnAdFullScreenContentFailed -= HandleInterstitialFailed;
+        }
+    }
+
+    private System.Collections.IEnumerator SimulateInterstitialCoroutine(Action onClosed)
+    {
+        Debug.Log("[AdManager] (Editor) Simulando interstitial...");
+        isShowingInterstitial = true;
+        float fakeDuration = 1.0f;
+        float t = 0f;
+        while (t < fakeDuration)
+        {
+            t += Time.unscaledDeltaTime;
+            yield return null;
+        }
+        isShowingInterstitial = false;
+        Debug.Log("[AdManager] (Editor) Fin simulación interstitial.");
+
+        // Simulación: mostramos banner otra vez
+        ShowBanner();
+
+        onClosed?.Invoke();
+        LoadInterstitial();
+    }
+
+    // ----------------------------
+    // REWARDED
+    // ----------------------------
     private void LoadRewarded()
     {
         AdRequest request = new AdRequest();
+
         RewardedAd.Load(REWARDED_ID, request, (RewardedAd ad, LoadAdError error) =>
         {
             if (error != null || ad == null)
             {
-                Debug.LogError("Falló cargar Rewarded: " + error);
+                Debug.LogWarning("[AdManager] Falló cargar Rewarded: " + error);
+                rewardedAd = null;
                 return;
             }
+
             rewardedAd = ad;
-            Debug.Log("Rewarded cargado correctamente.");
+            Debug.Log("[AdManager] Rewarded cargado correctamente.");
         });
     }
 
     public void ShowRewarded(Action<bool> onResult)
     {
+#if UNITY_EDITOR
         Debug.Log("[AdManager] Simulando rewarded en Editor.");
-        onResult?.Invoke(true); // En editor sí conviene simular éxito
+        onResult?.Invoke(true);
         return;
-
+#else
         if (rewardedAd != null && rewardedAd.CanShowAd())
         {
-            rewardedAd.OnAdFullScreenContentClosed += () => {
-                Debug.Log("Rewarded cerrado.");
-                LoadRewarded(); // recargar después de cerrarlo
+            rewardedAd.OnAdFullScreenContentClosed += () =>
+            {
+                LoadRewarded();
             };
 
-            rewardedAd.Show((Reward reward) => {
-                Debug.Log("Usuario obtuvo recompensa.");
-                onResult?.Invoke(true); //solo éxito si se dio la recompensa real
+            rewardedAd.Show((Reward reward) =>
+            {
+                onResult?.Invoke(true);
             });
         }
         else
         {
-            Debug.Log("Rewarded no disponible.");
-            onResult?.Invoke(false); //falló  no revive
+            Debug.Log("[AdManager] Rewarded no disponible.");
+            onResult?.Invoke(false);
             LoadRewarded();
         }
+#endif
     }
 
-
-    // -------- BANNER --------
+    // ----------------------------
+    // BANNER
+    // ----------------------------
     public void ShowBanner()
     {
-        if (bannerView != null)
-            return;
-        Debug.Log("[AdManager] Simulando Banner en Editor.");
-        if (bannerView != null)
-            bannerView.Destroy();
-
-        bannerView = new BannerView(BANNER_ID, AdSize.Banner, AdPosition.Bottom);
-        AdRequest request = new AdRequest();
-        bannerView.LoadAd(request);
-    }
-
-    public void HideBanner()
-    {
-        Debug.Log("[AdManager] Simulando ocultar Banner en Editor.");
         if (bannerView != null)
         {
             bannerView.Destroy();
             bannerView = null;
+        }
+
+        Debug.Log("[AdManager] Mostrando Banner.");
+        try
+        {
+            bannerView = new BannerView(BANNER_ID, AdSize.Banner, AdPosition.Bottom);
+            AdRequest request = new AdRequest();
+            bannerView.LoadAd(request);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning("[AdManager] Error al crear banner: " + ex);
+        }
+    }
+
+    public void HideBanner()
+    {
+        if (bannerView != null)
+        {
+            Debug.Log("[AdManager] Ocultando Banner.");
+            try
+            {
+                bannerView.Destroy();
+            }
+            catch { }
+            finally
+            {
+                bannerView = null;
+            }
         }
     }
 }

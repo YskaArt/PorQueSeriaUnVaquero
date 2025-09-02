@@ -29,7 +29,7 @@ public class GameStartManager : MonoBehaviour
     [SerializeField] private MiniGameController miniGame;
 
     private EnemySpawner spawner;
-    private float remainingTime; // contador persistente
+    [SerializeField] private float remainingTime; // contador persistente
 
     // ==========================
     // Awake(): configura Instance
@@ -135,43 +135,39 @@ public class GameStartManager : MonoBehaviour
         }
         fadeImage.color = Color.black;
 
-        // Si hay banner, ocultarlo antes del intersticial
+        // Ocultar banner antes del intersticial
         if (AdManager.Instance != null)
             AdManager.Instance.HideBanner();
 
-        // Mostramos intersticial sobre pantalla negra y, al cerrarse, cargamos la escena
-        bool proceeded = false;
-        Action proceedOnce = () =>
-        {
-            if (proceeded) return;
-            proceeded = true;
-
-            // Guarda por si querés persistir "última escena" y timer
-            GameSaveManager.Instance?.SaveGame();
-
-            SceneManager.LoadScene(sceneName);
-        };
+        bool interstitialClosed = false;
 
         if (AdManager.Instance != null)
         {
-            // Llamamos y esperamos a que el callback llegue; ponemos un “backup” por si el provider no dispara evento.
-            AdManager.Instance.ShowInterstitial(proceedOnce);
-
-            // Espera pasiva hasta que el callback ocurra o pase un tiempo de seguridad
-            float safety = 5f; // segundos de espera de seguridad
-            while (!proceeded && safety > 0f)
+            Debug.Log("[GameStartManager] Mostrando intersticial antes del cambio de escena...");
+            AdManager.Instance.ShowInterstitial(() =>
             {
-                safety -= Time.unscaledDeltaTime;
+                Debug.Log("[GameStartManager] Intersticial cerrado, continuando...");
+                interstitialClosed = true;
+            });
+
+            // Esperar hasta que se cierre el intersticial
+            while (!interstitialClosed)
+            {
                 yield return null;
             }
-            proceedOnce(); // si ya ocurrió, no hará nada (idempotente)
         }
         else
         {
-            // Si no hay AdManager, cargamos de inmediato
-            proceedOnce();
+            Debug.LogWarning("[GameStartManager] No hay AdManager, cambiando escena directamente...");
         }
+
+        // Guardar progreso antes de salir
+        GameSaveManager.Instance?.SaveGame();
+
+        // Ahora sí, cambiar escena
+        SceneManager.LoadScene(sceneName);
     }
+
 
     // ==========================
     // GetRemainingTime(): usado por GameSaveManager para persistir el timer
