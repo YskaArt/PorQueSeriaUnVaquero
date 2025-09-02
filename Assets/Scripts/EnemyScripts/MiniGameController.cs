@@ -1,36 +1,27 @@
-using UnityEngine;
+Ôªøusing UnityEngine;
 
 public class MiniGameController : MonoBehaviour
 {
     [Header("Refs")]
-    // Referencias principales necesarias para el minijuego.
-    [SerializeField] private InfiniteTilemapLoop tilemapScroller; // Controla el scroll del fondo.
-    [SerializeField] private GameObject specialEnemy; // El jefe/miniboss que aparece en el minijuego.
-    [SerializeField] private Transform enemyTargetPosition; // PosiciÛn donde el miniboss debe colocarse.
-    [SerializeField] private PlayerShootController playerShooter; // Control del disparo del jugador.
-    [SerializeField] private PlayerMovement playerMovement; // Control de movimiento del jugador.
-    [SerializeField] private GameStartManager sceneManager; // Maneja el cambio de escenas.
-    [SerializeField] private HorseSkillController horseSkill; // Controla la habilidad del caballo (habilita/deshabilita).
+    [SerializeField] private InfiniteTilemapLoop tilemapScroller;
+    [SerializeField] private GameObject specialEnemy;
+    [SerializeField] private Transform enemyTargetPosition;
+    [SerializeField] private PlayerShootController playerShooter;
+    [SerializeField] private PlayerMovement playerMovement;
+    [SerializeField] private GameStartManager sceneManager;
+    [SerializeField] private HorseSkillController horseSkill;
 
     [Header("Escenas siguientes (elige una al azar)")]
-    // Lista de escenas posibles a cargar despuÈs del minijuego.
     [SerializeField] private string[] nextScenes;
 
-    // M…TODO: Awake()
-    // Asegura que la referencia a HorseSkillController exista.
+    // Asegura referencia a HorseSkillController si no fue asignada en Inspector
     private void Awake()
     {
         if (horseSkill == null)
             horseSkill = FindAnyObjectByType<HorseSkillController>();
     }
 
-    // M…TODO: StartMiniGame()
-    // Activa el flujo inicial del minijuego:
-    // - Bloquea la skill del caballo.
-    // - Detiene el scroll del mapa.
-    // - Centra al jugador en el carril del medio.
-    // - Activa el miniboss y lo mueve hasta su posiciÛn objetivo.
-    // - Cuando el miniboss llega, comienza el disparo autom·tico del jugador.
+    // Inicia el flujo del minijuego
     public void StartMiniGame()
     {
         if (horseSkill != null)
@@ -48,7 +39,6 @@ public class MiniGameController : MonoBehaviour
             var boss = specialEnemy.GetComponent<MiniBossController>();
             if (boss != null)
             {
-                // Movimiento del miniboss con callback al llegar
                 boss.MoveTo(enemyTargetPosition.position, () =>
                 {
                     if (playerShooter != null)
@@ -58,12 +48,7 @@ public class MiniGameController : MonoBehaviour
         }
     }
 
-    // M…TODO: OnEnemyDefeated()
-    // Se llama cuando el miniboss muere:
-    // - Detiene el disparo del jugador.
-    // - Ejecuta la animaciÛn de salida del jugador.
-    // - Habilita nuevamente la skill del caballo.
-    // - Selecciona aleatoriamente una escena y solicita la transiciÛn.
+    // Llamado cuando el miniboss muere
     public void OnEnemyDefeated()
     {
         if (playerShooter != null)
@@ -71,7 +56,7 @@ public class MiniGameController : MonoBehaviour
 
         if (playerShooter != null)
         {
-            // Movimiento de salida del jugador con callback.
+            // Animaci√≥n de salida del jugador; al terminar ejecutamos transici√≥n
             playerShooter.MoveOut(() =>
             {
                 if (horseSkill != null)
@@ -80,6 +65,9 @@ public class MiniGameController : MonoBehaviour
                 string targetScene = PickRandomNextScene();
                 if (!string.IsNullOrEmpty(targetScene) && sceneManager != null)
                 {
+                    // ‚ö†Ô∏è Ya no mostramos anuncios aqu√≠.
+                    // El intersticial se muestra dentro de GameStartManager.EndSceneAndLoadNext(),
+                    // despu√©s del fade a negro y antes de cargar la escena.
                     sceneManager.EndSceneAndLoadNext(targetScene);
                 }
                 else
@@ -90,7 +78,6 @@ public class MiniGameController : MonoBehaviour
         }
         else
         {
-            // Si no hay animaciÛn de salida, fallback directo.
             if (horseSkill != null)
                 horseSkill.SetMiniGameActive(false);
 
@@ -100,8 +87,7 @@ public class MiniGameController : MonoBehaviour
         }
     }
 
-    // M…TODO: PickRandomNextScene()
-    // Devuelve el nombre de una escena aleatoria de la lista `nextScenes`.
+    // Selecciona una escena aleatoria
     private string PickRandomNextScene()
     {
         if (nextScenes == null || nextScenes.Length == 0)

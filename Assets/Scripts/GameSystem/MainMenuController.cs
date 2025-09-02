@@ -3,11 +3,10 @@ using UnityEngine.SceneManagement;
 
 public class MainMenuController : MonoBehaviour
 {
-    [SerializeField] private string gameSceneName = "Desert"; // Nombre de la escena a cargar
+    [SerializeField] private string defaultScene = "Desert";
 
     private void Update()
     {
-        // Detecta clic del mouse (botón izquierdo) o toque en pantalla
         if (Input.GetMouseButtonDown(0) || Input.touchCount > 0)
         {
             LoadGame();
@@ -16,6 +15,14 @@ public class MainMenuController : MonoBehaviour
 
     private void LoadGame()
     {
-        SceneManager.LoadScene(gameSceneName);
+        string lastScene = null;
+
+        if (GameSaveManager.Instance != null)
+        {
+            lastScene = GameSaveManager.Instance.GetLastScene();
+        }
+
+        string sceneToLoad = !string.IsNullOrEmpty(lastScene) ? lastScene : defaultScene;
+        SceneManager.LoadScene(sceneToLoad);
     }
 }

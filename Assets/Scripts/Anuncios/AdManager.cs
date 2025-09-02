@@ -6,11 +6,12 @@ public class AdManager : MonoBehaviour
 {
     public static AdManager Instance;
 
-    // ola papu, las ID cambialas x las que te de Admob
+    // ola papu, las ID cambialas x las que te de Admob]
+    //Nota de que ya cambie las ID papu
 
-    private const string BANNER_ID = "ca-app-pub-2266949018056491/3748928266";
-    private const string INTERSTITIAL_ID = "ca-app-pub-2266949018056491/6375091601";
-    private const string REWARDED_ID = "ca-app-pub-2266949018056491/6865545188";
+    private const string BANNER_ID = "ca-app-pub-8408315673471628/8656782151";
+    private const string INTERSTITIAL_ID = "ca-app-pub-8408315673471628/5911199317";
+    private const string REWARDED_ID = "ca-app-pub-8408315673471628/3285035971";
 
     private InterstitialAd interstitialAd;
     private RewardedAd rewardedAd;
@@ -32,6 +33,7 @@ public class AdManager : MonoBehaviour
             Debug.Log("Google Mobile Ads inicializado.");
             LoadInterstitial();
             LoadRewarded();
+            ShowBanner();
         });
     }
 
@@ -118,6 +120,8 @@ public class AdManager : MonoBehaviour
     // -------- BANNER --------
     public void ShowBanner()
     {
+        if (bannerView != null)
+            return;
         Debug.Log("[AdManager] Simulando Banner en Editor.");
         if (bannerView != null)
             bannerView.Destroy();

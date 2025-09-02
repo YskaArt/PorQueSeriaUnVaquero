@@ -4,8 +4,10 @@ using UnityEngine;
 
 /// <summary>
 /// Gestiona el guardado y carga de progreso del jugador:
-/// - Niveles de upgrades (UpgradeData)
-/// - Cantidad de oro (GoldManager)
+/// - Niveles de upgrades
+/// - Cantidad de oro
+/// - Última escena jugada
+/// - Tiempo restante para minijuego
 /// Persistencia mediante PlayerPrefs + JSON
 /// </summary>
 public class GameSaveManager : MonoBehaviour
@@ -13,14 +15,12 @@ public class GameSaveManager : MonoBehaviour
     public static GameSaveManager Instance { get; private set; }
 
     [Header("Upgrades del Juego")]
-    [SerializeField] private UpgradeData[] allUpgrades; // Todas las mejoras definidas en el juego
+    [SerializeField] private UpgradeData[] allUpgrades;
 
-    private const string SaveKey = "IdleGameSave"; // Clave en PlayerPrefs
+    private const string SaveKey = "IdleGameSave";
 
-    // ==========================
-    // MÉTODO: Awake()
-    // Configura Singleton y asegura persistencia entre escenas
-    // ==========================
+    private GameSaveData loadedData;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -33,19 +33,11 @@ public class GameSaveManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
-    // ==========================
-    // MÉTODO: Start()
-    // Carga el progreso al inicio del juego
-    // ==========================
     private void Start()
     {
         LoadGame();
     }
 
-    // ==========================
-    // MÉTODO: SaveGame()
-    // Guarda oro y niveles de todas las mejoras en JSON
-    // ==========================
     public void SaveGame()
     {
         if (GoldManager.Instance == null) return;
@@ -53,7 +45,10 @@ public class GameSaveManager : MonoBehaviour
         GameSaveData saveData = new GameSaveData
         {
             gold = GoldManager.Instance.CurrentGold,
-            upgrades = new List<UpgradeSaveData>()
+            upgrades = new List<UpgradeSaveData>(),
+            lastScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name,
+            timeBeforeMiniGame = GameStartManager.Instance != null ? GameStartManager.Instance.GetRemainingTime() : 0,
+            lastSaveTimestamp = DateTime.Now.ToBinary()
         };
 
         foreach (var upgrade in allUpgrades)
@@ -72,10 +67,6 @@ public class GameSaveManager : MonoBehaviour
         Debug.Log("✅ Juego guardado: " + json);
     }
 
-    // ==========================
-    // MÉTODO: LoadGame()
-    // Carga oro y niveles desde PlayerPrefs si existe guardado
-    // ==========================
     public void LoadGame()
     {
         if (!PlayerPrefs.HasKey(SaveKey))
@@ -85,9 +76,9 @@ public class GameSaveManager : MonoBehaviour
         }
 
         string json = PlayerPrefs.GetString(SaveKey);
-        GameSaveData saveData = JsonUtility.FromJson<GameSaveData>(json);
+        loadedData = JsonUtility.FromJson<GameSaveData>(json);
 
-        if (saveData == null)
+        if (loadedData == null)
         {
             Debug.LogWarning("⚠ Error al cargar datos.");
             return;
@@ -96,27 +87,23 @@ public class GameSaveManager : MonoBehaviour
         // Restaurar oro
         if (GoldManager.Instance != null)
         {
-            GoldManager.Instance.AddGold(saveData.gold - GoldManager.Instance.CurrentGold);
+            GoldManager.Instance.AddGold(loadedData.gold - GoldManager.Instance.CurrentGold);
         }
 
-        // Restaurar niveles y recalcular OPS total
+        // Restaurar upgrades
         double totalOPS = 0;
-
-        foreach (var savedUpgrade in saveData.upgrades)
+        foreach (var savedUpgrade in loadedData.upgrades)
         {
             foreach (var upgrade in allUpgrades)
             {
                 if (upgrade.upgradeName == savedUpgrade.upgradeName)
                 {
                     upgrade.currentLevel = savedUpgrade.currentLevel;
-
-                    // Sumar OPS total según el nivel actual
                     totalOPS += upgrade.goldPerSecondPerLevel * upgrade.currentLevel;
                 }
             }
         }
 
-        // Establecer OPS correcto (reseteando antes)
         if (GoldManager.Instance != null)
         {
             GoldManager.Instance.SetGoldPerSecond(totalOPS);
@@ -125,11 +112,29 @@ public class GameSaveManager : MonoBehaviour
         Debug.Log("✅ Juego cargado: " + json);
     }
 
+    public string GetLastScene()
+    {
+        return loadedData != null && !string.IsNullOrEmpty(loadedData.lastScene)
+            ? loadedData.lastScene
+            : null;
+    }
 
-    // ==========================
-    // MÉTODO: ResetGame()
-    // Limpia el progreso (para debug o reinicio manual)
-    // ==========================
+    public float GetSavedTimer()
+    {
+        if (loadedData == null) return 0;
+
+        if (loadedData.timeBeforeMiniGame > 0 && loadedData.lastSaveTimestamp > 0)
+        {
+            DateTime lastSaveTime = DateTime.FromBinary(loadedData.lastSaveTimestamp);
+            double secondsPassed = (DateTime.Now - lastSaveTime).TotalSeconds;
+
+            float remaining = loadedData.timeBeforeMiniGame - (float)secondsPassed;
+            return Mathf.Max(remaining, 0);
+        }
+
+        return 0;
+    }
+
     public void ResetGame()
     {
         PlayerPrefs.DeleteKey(SaveKey);
@@ -137,29 +142,22 @@ public class GameSaveManager : MonoBehaviour
         Debug.Log("🗑 Progreso borrado.");
     }
 
-    // ==========================
-    // EVENTO: OnApplicationQuit()
-    // Guarda automáticamente al cerrar el juego
-    // ==========================
     private void OnApplicationQuit()
     {
         SaveGame();
     }
 }
 
-/// <summary>
-/// Clase raíz del guardado (JSON)
-/// </summary>
 [Serializable]
 public class GameSaveData
 {
     public double gold;
     public List<UpgradeSaveData> upgrades;
+    public string lastScene;
+    public float timeBeforeMiniGame;
+    public long lastSaveTimestamp;
 }
 
-/// <summary>
-/// Datos individuales de cada upgrade
-/// </summary>
 [Serializable]
 public class UpgradeSaveData
 {

@@ -6590,7 +6590,7 @@ GameObject:
   - component: {fileID: 510447344}
   m_Layer: 5
   m_Name: GoldPerSecondText
-  m_TagString: Untagged
+  m_TagString: GoldPerSecondText
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -7286,7 +7286,7 @@ MonoBehaviour:
   fadeOutDuration: 2
   mapTitleText: {fileID: 895737995}
   mapTitleDuration: 3
-  timeBeforeMiniGame: 60
+  timeBeforeMiniGame: 180
   stopSpawnerDelay: 5
   tilemapScroller: {fileID: 470131134}
   miniGame: {fileID: 762259927}
@@ -11986,7 +11986,7 @@ GameObject:
   - component: {fileID: 1061461654}
   m_Layer: 5
   m_Name: GoldText
-  m_TagString: Untagged
+  m_TagString: GoldText
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
