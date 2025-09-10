@@ -4,10 +4,10 @@ using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using System.Collections;
 using System;
+using GoogleMobileAds.Api;
 
 public class GameStartManager : MonoBehaviour
 {
-    // Singleton liviano (útil para que GameSaveManager pregunte el tiempo restante)
     public static GameStartManager Instance { get; private set; }
 
     [Header("Fade")]
@@ -20,7 +20,6 @@ public class GameStartManager : MonoBehaviour
     [SerializeField] private float mapTitleDuration = 3f;
 
     [Header("Timer")]
-    // El tiempo total antes de disparar el minijuego se toma de guardado o se genera (3–5 min)
     [SerializeField] private float timeBeforeMiniGame;
     [SerializeField] private float stopSpawnerDelay = 15f;
 
@@ -29,42 +28,129 @@ public class GameStartManager : MonoBehaviour
     [SerializeField] private MiniGameController miniGame;
 
     private EnemySpawner spawner;
-    [SerializeField] private float remainingTime; // contador persistente
+    [SerializeField] private float remainingTime;
 
-    // ==========================
-    // Awake(): configura Instance
-    // ==========================
+    // Ads
+    private const string INTERSTITIAL_ID = "ca-app-pub-8408315673471628/5911199317";
+    private const string BANNER_ID = "ca-app-pub-8408315673471628/8656782151";
+    private InterstitialAd interstitialAd;
+    private BannerView bannerView;
+    private bool isInterstitialLoaded = false;
+    private bool isInterstitialClosed = false;
+    private bool mobileAdsInitialized = false;
+
     private void Awake()
     {
-        if (Instance == null)
-            Instance = this;
+        if (Instance == null) Instance = this;
     }
 
-    // ==========================
-    // Start(): inicialización y arranque de la intro
-    // ==========================
     private void Start()
     {
         spawner = FindFirstObjectByType<EnemySpawner>();
+        StartCoroutine(InitAndShowInterstitialFlow());
+    }
+
+    private IEnumerator InitAndShowInterstitialFlow()
+    {
+        // Inicializar MobileAds solo una vez
+        if (!mobileAdsInitialized)
+        {
+            bool done = false;
+            MobileAds.Initialize(initStatus =>
+            {
+                Debug.Log("[GameStartManager] MobileAds inicializado.");
+                mobileAdsInitialized = true;
+                done = true;
+            });
+            while (!done) yield return null;
+        }
+
+        // Cargar interstitial
+        isInterstitialLoaded = false;
+        isInterstitialClosed = false;
+        LoadInterstitial();
+
+        // Esperar a que el interstitial esté cargado o timeout
+        float wait = 0f;
+        const float maxWait = 8f;
+        while (!isInterstitialLoaded && wait < maxWait)
+        {
+            wait += Time.deltaTime;
+            yield return null;
+        }
+
+        // Ocultar banner antes de mostrar interstitial
+        HideBanner();
+
+        if (isInterstitialLoaded && interstitialAd != null)
+        {
+            Debug.Log("[GameStartManager] Mostrando interstitial...");
+            try
+            {
+                interstitialAd.Show();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("[GameStartManager] Error al mostrar interstitial: " + ex);
+                isInterstitialClosed = true;
+            }
+            // Esperar a que el usuario cierre el interstitial
+            while (!isInterstitialClosed)
+                yield return null;
+            Debug.Log("[GameStartManager] Interstitial cerrado.");
+        }
+        else
+        {
+            Debug.LogWarning("[GameStartManager] Interstitial no listo tras timeout, mostrando banner.");
+        }
+
+        // Siempre mostrar banner después del interstitial o si no hay interstitial
+        ShowBanner();
 
         // Cargar un tiempo guardado (si hay), o generar entre 180–300 seg (3–5 min)
         float savedTime = GameSaveManager.Instance != null ? GameSaveManager.Instance.GetSavedTimer() : 0f;
         remainingTime = savedTime > 0f ? savedTime : UnityEngine.Random.Range(180f, 300f);
 
-        StartCoroutine(PlayIntroSequence());
+        yield return StartCoroutine(PlayIntroSequence());
     }
 
-    // ==========================
-    // Corrutina de Intro + cuenta regresiva persistente
-    // ==========================
+    private void LoadInterstitial()
+    {
+        AdRequest request = new AdRequest();
+        InterstitialAd.Load(INTERSTITIAL_ID, request, (InterstitialAd ad, LoadAdError error) =>
+        {
+            if (error != null || ad == null)
+            {
+                Debug.LogWarning("[GameStartManager] Falló cargar Interstitial: " + error);
+                interstitialAd = null;
+                isInterstitialLoaded = false;
+                return;
+            }
+            if (interstitialAd != null)
+            {
+                try { interstitialAd.Destroy(); } catch { }
+            }
+            interstitialAd = ad;
+            isInterstitialLoaded = true;
+            interstitialAd.OnAdFullScreenContentClosed += OnInterstitialClosed;
+            interstitialAd.OnAdFullScreenContentFailed += (err) => { Debug.LogWarning("[GameStartManager] Interstitial failed: " + err); OnInterstitialClosed(); };
+            Debug.Log("[GameStartManager] Interstitial cargado correctamente.");
+        });
+    }
+
+    private void OnInterstitialClosed()
+    {
+        isInterstitialClosed = true;
+        // Preload next interstitial for future use
+        LoadInterstitial();
+    }
+
     private IEnumerator PlayIntroSequence()
     {
-        // Pantalla negra al inicio
         fadeImage.gameObject.SetActive(true);
         fadeImage.color = Color.black;
         yield return new WaitForSeconds(0.5f);
 
-        // Fade-in
         float t = 0f;
         while (t < fadeInDuration)
         {
@@ -75,7 +161,6 @@ public class GameStartManager : MonoBehaviour
         fadeImage.color = Color.clear;
         fadeImage.gameObject.SetActive(false);
 
-        // Título del mapa
         if (mapTitleText != null)
         {
             mapTitleText.gameObject.SetActive(true);
@@ -83,7 +168,6 @@ public class GameStartManager : MonoBehaviour
             mapTitleText.gameObject.SetActive(false);
         }
 
-        // Conteo vivo del tiempo restante (se guarda cada ~2 seg para persistencia)
         float autosaveTicker = 0f;
         while (remainingTime > 0f)
         {
@@ -93,38 +177,58 @@ public class GameStartManager : MonoBehaviour
             if (autosaveTicker >= 2f && GameSaveManager.Instance != null)
             {
                 autosaveTicker = 0f;
-                GameSaveManager.Instance.SaveGame(); // guarda remainingTime y timestamp
+                GameSaveManager.Instance.SaveGame();
             }
 
             yield return null;
         }
 
-        // Frenar el spawner y esperar a que no queden enemigos en escena
         if (spawner != null) spawner.StopSpawning();
         while (GameObject.FindGameObjectsWithTag("Enemy").Length > 0)
             yield return null;
 
-        // Pequeño delay de “respiro” antes del minijuego
         yield return new WaitForSeconds(stopSpawnerDelay);
 
-        // Arrancar minijuego
         if (miniGame != null) miniGame.StartMiniGame();
     }
 
-    // ==========================
-    // EndSceneAndLoadNext(): inicia fade-out y, tras el fade, muestra intersticial y cambia de escena
-    // ==========================
+    private void ShowBanner()
+    {
+        if (bannerView != null)
+        {
+            bannerView.Destroy();
+            bannerView = null;
+        }
+        Debug.Log("[GameStartManager] Mostrando Banner.");
+        try
+        {
+            bannerView = new BannerView(BANNER_ID, AdSize.Banner, AdPosition.Bottom);
+            AdRequest request = new AdRequest();
+            bannerView.LoadAd(request);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning("[GameStartManager] Error al crear banner: " + ex);
+        }
+    }
+
+    private void HideBanner()
+    {
+        if (bannerView != null)
+        {
+            Debug.Log("[GameStartManager] Ocultando Banner.");
+            try { bannerView.Destroy(); } catch { }
+            bannerView = null;
+        }
+    }
+
     public void EndSceneAndLoadNext(string nextSceneName)
     {
         StartCoroutine(EndSceneRoutine(nextSceneName));
     }
 
-    // ==========================
-    // EndSceneRoutine(): hace fade a negro, muestra intersticial, luego carga escena
-    // ==========================
     private IEnumerator EndSceneRoutine(string sceneName)
     {
-        // Fade-out a negro
         fadeImage.gameObject.SetActive(true);
         float t = 0f;
         while (t < fadeOutDuration)
@@ -135,43 +239,14 @@ public class GameStartManager : MonoBehaviour
         }
         fadeImage.color = Color.black;
 
-        // Ocultar banner antes del intersticial
-        if (AdManager.Instance != null)
-            AdManager.Instance.HideBanner();
-
-        bool interstitialClosed = false;
-
-        if (AdManager.Instance != null)
-        {
-            Debug.Log("[GameStartManager] Mostrando intersticial antes del cambio de escena...");
-            AdManager.Instance.ShowInterstitial(() =>
-            {
-                Debug.Log("[GameStartManager] Intersticial cerrado, continuando...");
-                interstitialClosed = true;
-            });
-
-            // Esperar hasta que se cierre el intersticial
-            while (!interstitialClosed)
-            {
-                yield return null;
-            }
-        }
-        else
-        {
-            Debug.LogWarning("[GameStartManager] No hay AdManager, cambiando escena directamente...");
-        }
-
         // Guardar progreso antes de salir
         GameSaveManager.Instance?.SaveGame();
 
-        // Ahora sí, cambiar escena
         SceneManager.LoadScene(sceneName);
+
+        yield break;
     }
 
-
-    // ==========================
-    // GetRemainingTime(): usado por GameSaveManager para persistir el timer
-    // ==========================
     public float GetRemainingTime()
     {
         return Mathf.Max(remainingTime, 0f);

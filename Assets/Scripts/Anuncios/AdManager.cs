@@ -7,7 +7,6 @@ public class AdManager : MonoBehaviour
 {
     public static AdManager Instance;
 
-    // Tus IDs
     private const string BANNER_ID = "ca-app-pub-8408315673471628/8656782151";
     private const string INTERSTITIAL_ID = "ca-app-pub-8408315673471628/5911199317";
     private const string REWARDED_ID = "ca-app-pub-8408315673471628/3285035971";
@@ -51,8 +50,11 @@ public class AdManager : MonoBehaviour
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        // Al cargar cualquier escena mostramos el banner
-        ShowBanner();
+        // Cuando carga una escena, escondemos el banner y mostramos intersticial si está listo
+        HideBanner();
+
+        // Intentamos mostrar un interstitial; si no está listo, ShowInterstitial mostrará el banner
+        ShowInterstitial(() => { /* callback vacío: banner será mostrado dentro de ShowInterstitial flow */ });
     }
 
     // ----------------------------
@@ -83,10 +85,7 @@ public class AdManager : MonoBehaviour
 
     public void ShowInterstitial(Action onClosed)
     {
-#if UNITY_EDITOR
-        StartCoroutine(SimulateInterstitialCoroutine(onClosed));
-        return;
-#else
+        // If already showing, immediately invoke callback
         if (isShowingInterstitial)
         {
             Debug.Log("[AdManager] Ya hay un interstitial mostrándose.");
@@ -94,11 +93,20 @@ public class AdManager : MonoBehaviour
             return;
         }
 
+        // Editor simulation path
+        if (Application.isEditor)
+        {
+            StartCoroutine(SimulateInterstitialCoroutine(onClosed));
+            return;
+        }
+
+        // Production path: show real interstitial if available
         if (interstitialAd != null && interstitialAd.CanShowAd())
         {
             isShowingInterstitial = true;
             interstitialCallback = onClosed;
 
+            // Attach handlers
             interstitialAd.OnAdFullScreenContentClosed += HandleInterstitialClosed;
             interstitialAd.OnAdFullScreenContentFailed += HandleInterstitialFailed;
 
@@ -114,11 +122,12 @@ public class AdManager : MonoBehaviour
         }
         else
         {
-            Debug.Log("[AdManager] Interstitial no disponible — ejecutando callback inmediato.");
+            Debug.Log("[AdManager] Interstitial no disponible — mostrando banner en su lugar.");
+            // Fall back: show banner immediately and request a load for next time.
+            ShowBanner();
             onClosed?.Invoke();
             LoadInterstitial();
         }
-#endif
     }
 
     private void HandleInterstitialClosed()
@@ -130,6 +139,7 @@ public class AdManager : MonoBehaviour
 
         isShowingInterstitial = false;
 
+        // Preload next interstitial
         LoadInterstitial();
 
         // Después de cerrar, mostramos el banner de nuevo
@@ -163,8 +173,12 @@ public class AdManager : MonoBehaviour
     {
         if (interstitialAd != null)
         {
-            interstitialAd.OnAdFullScreenContentClosed -= HandleInterstitialClosed;
-            interstitialAd.OnAdFullScreenContentFailed -= HandleInterstitialFailed;
+            try
+            {
+                interstitialAd.OnAdFullScreenContentClosed -= HandleInterstitialClosed;
+                interstitialAd.OnAdFullScreenContentFailed -= HandleInterstitialFailed;
+            }
+            catch { }
         }
     }
 
@@ -212,11 +226,13 @@ public class AdManager : MonoBehaviour
 
     public void ShowRewarded(Action<bool> onResult)
     {
-#if UNITY_EDITOR
-        Debug.Log("[AdManager] Simulando rewarded en Editor.");
-        onResult?.Invoke(true);
-        return;
-#else
+        if (Application.isEditor)
+        {
+            Debug.Log("[AdManager] Simulando rewarded en Editor.");
+            onResult?.Invoke(true);
+            return;
+        }
+
         if (rewardedAd != null && rewardedAd.CanShowAd())
         {
             rewardedAd.OnAdFullScreenContentClosed += () =>
@@ -235,7 +251,6 @@ public class AdManager : MonoBehaviour
             onResult?.Invoke(false);
             LoadRewarded();
         }
-#endif
     }
 
     // ----------------------------
