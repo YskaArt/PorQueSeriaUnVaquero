@@ -42,12 +42,45 @@ public class GoldManager : MonoBehaviour
             Destroy(gameObject);
             return;
         }
-        UpdateGoldUI();
+
         Instance = this;
         DontDestroyOnLoad(gameObject);
         SceneManager.sceneLoaded += OnSceneLoaded;
+
+        // Actualiza la UI en caso de que los valores se asignaran antes de Awake
+        UpdateGoldUI();
     }
 
+    // ==========================
+    // MÉTODO: Start()
+    // Aplica los datos guardados una vez que los managers existen
+    // ==========================
+    private void Start()
+    {
+        // Si hay datos guardados que se cargaron antes de que existiera GoldManager, aplícalos ahora
+        GameSaveManager.Instance?.ApplyLoadedDataToManagers();
+
+        // Asegura que la UI refleje los valores aplicados
+        UpdateGoldUI();
+    }
+
+    // ==========================
+    // MÉTODO: OnDestroy()
+    // Limpia las suscripciones al cambiar de escena
+    // ==========================
+    private void OnDestroy()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    /// <summary>
+    /// Cuando carga una escena, busca y asigna los textos automáticamente.
+    /// </summary>
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        AssignUIReferences();
+        UpdateGoldUI();
+    }
     // ==========================
     // MÉTODO: Update()
     // Incrementa oro automáticamente cada segundo
@@ -63,19 +96,7 @@ public class GoldManager : MonoBehaviour
             OnGoldChanged?.Invoke();
         }
     }
-    private void OnDestroy()
-    {
-        SceneManager.sceneLoaded -= OnSceneLoaded;
-    }
 
-    /// <summary>
-    /// Cuando carga una escena, busca y asigna los textos automáticamente.
-    /// </summary>
-    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
-    {
-        AssignUIReferences();
-        UpdateGoldUI();
-    }
     // ==========================
     // MÉTODO: AddGold()
     // Suma oro inmediato (por ejemplo al matar enemigos)

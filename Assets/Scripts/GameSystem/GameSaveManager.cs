@@ -84,7 +84,7 @@ public class GameSaveManager : MonoBehaviour
             return;
         }
 
-        // Restaurar oro
+        // Restaurar oro si GoldManager ya está disponible
         if (GoldManager.Instance != null)
         {
             GoldManager.Instance.AddGold(loadedData.gold - GoldManager.Instance.CurrentGold);
@@ -110,6 +110,46 @@ public class GameSaveManager : MonoBehaviour
         }
 
         Debug.Log("✅ Juego cargado: " + json);
+
+        // Si GoldManager no estaba disponible en el momento de la carga, apply later when it becomes available
+        if (GoldManager.Instance == null)
+        {
+            Debug.Log("GameSaveManager: GoldManager no disponible, se aplicarán los datos cuando esté listo.");
+        }
+    }
+
+    // Public helper: aplica los datos cargados al GoldManager si están pendientes
+    public void ApplyLoadedDataToManagers()
+    {
+        if (loadedData == null)
+            return;
+
+        // Aplicar oro
+        if (GoldManager.Instance != null)
+        {
+            GoldManager.Instance.AddGold(loadedData.gold - GoldManager.Instance.CurrentGold);
+        }
+
+        // Aplicar OPS calculado a partir de upgrades
+        double totalOPS = 0;
+        foreach (var savedUpgrade in loadedData.upgrades)
+        {
+            foreach (var upgrade in allUpgrades)
+            {
+                if (upgrade.upgradeName == savedUpgrade.upgradeName)
+                {
+                    upgrade.currentLevel = savedUpgrade.currentLevel;
+                    totalOPS += upgrade.goldPerSecondPerLevel * upgrade.currentLevel;
+                }
+            }
+        }
+
+        if (GoldManager.Instance != null)
+        {
+            GoldManager.Instance.SetGoldPerSecond(totalOPS);
+        }
+
+        Debug.Log("GameSaveManager: Datos aplicados a los managers desde loadedData.");
     }
 
     public string GetLastScene()
