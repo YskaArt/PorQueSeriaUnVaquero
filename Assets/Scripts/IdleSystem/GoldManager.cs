@@ -173,7 +173,7 @@ public class GoldManager : MonoBehaviour
             number /= 1000;
             index++;
         }
-        return number.ToString("0.##") + suffixes[index];
+        return number.ToString("0.#") + suffixes[index];
     }
 
     // ==========================

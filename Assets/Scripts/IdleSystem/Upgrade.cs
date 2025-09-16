@@ -190,7 +190,7 @@ public class Upgrade : MonoBehaviour
             {
                 double totalCost = GetTotalCost(displayQty);
                 string costFormatted = GoldManager.FormatNumber(totalCost);
-                priceText.text = $"Buy {displayQty}\nCosto: {costFormatted} G";
+                priceText.text = $"Buy {displayQty}\n {costFormatted} ";
             }
         }
 
