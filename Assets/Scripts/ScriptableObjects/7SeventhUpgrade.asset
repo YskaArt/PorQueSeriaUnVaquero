@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 52246123c94e16d4fbab69feb83aaade, type: 3}
   m_Name: 7SeventhUpgrade
   m_EditorClassIdentifier: 
-  upgradeName: 7
+  upgradeName: Guantes de Cuero
   baseCost: 14000000
   costMultiplier: 1.31
   goldPerSecondPerLevel: 35000

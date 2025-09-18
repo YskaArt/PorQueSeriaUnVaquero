@@ -16,9 +16,10 @@ MonoBehaviour:
   baseCost: 6
   costMultiplier: 1.15
   goldPerSecondPerLevel: 0.1
-  currentLevel: 3
+  currentLevel: 0
   hasBonus: 0
   bonusUnlockLevel: 25
   bonusCost: 10000
   bonusMultiplier: 2
   bonusPurchased: 0
+  upgradeData: {fileID: 0}

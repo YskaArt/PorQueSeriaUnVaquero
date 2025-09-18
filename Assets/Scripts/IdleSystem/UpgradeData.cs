@@ -1,11 +1,11 @@
-using System;
+ï»¿using System;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "NewUpgrade", menuName = "Idle/Upgrade")]
 public class UpgradeData : ScriptableObject
 {
     // ==========================
-    // PROPIEDADES BÁSICAS
+    // PROPIEDADES BÃSICAS
     // ==========================
     public string upgradeName;                 // Nombre del upgrade
     public double baseCost ;               // Costo base del primer nivel
@@ -18,7 +18,7 @@ public class UpgradeData : ScriptableObject
     // ==========================
     [Header("Bonus (comprable)")]
     public bool hasBonus = false;              // Si esta mejora tiene bono disponible
-    public int bonusUnlockLevel = 25;          // Nivel mínimo para poder comprar el bono
+    public int bonusUnlockLevel = 25;          // Nivel mÃ­nimo para poder comprar el bono
     public double bonusCost = 10000;           // Costo en oro para comprar el bono
     public double bonusMultiplier = 2.0;       // Multiplicador que aplica al OPS de este upgrade al comprar bono
     [HideInInspector] public bool bonusPurchased = false; // Si el bono ya fue comprado
@@ -29,8 +29,11 @@ public class UpgradeData : ScriptableObject
     public event Action OnLevelChanged;
     public event Action OnBonusPurchased; // Se dispara cuando se compra el bono
 
+    [SerializeField] private UpgradeData upgradeData;
+    public UpgradeData GetUpgradeData() => upgradeData;
+
     // ==========================
-    // MÉTODO: GetCost()
+    // MÃ‰TODO: GetCost()
     // Coste del siguiente nivel
     // ==========================
     public double GetCost()
@@ -39,7 +42,7 @@ public class UpgradeData : ScriptableObject
     }
 
     // ==========================
-    // MÉTODO: GetGoldPerSecondGain()
+    // MÃ‰TODO: GetGoldPerSecondGain()
     // Ganancia pasiva actual sin contar bono
     // ==========================
     public double GetGoldPerSecondGain()
@@ -48,7 +51,7 @@ public class UpgradeData : ScriptableObject
     }
 
     // ==========================
-    // MÉTODO: LevelUp()
+    // MÃ‰TODO: LevelUp()
     // Incrementa un nivel y dispara evento
     // ==========================
     public void LevelUp()
@@ -58,7 +61,7 @@ public class UpgradeData : ScriptableObject
     }
 
     // ==========================
-    // MÉTODO: IsBonusAvailable()
+    // MÃ‰TODO: IsBonusAvailable()
     // Indica si el bono puede comprarse (cumple nivel y no comprado)
     // ==========================
     public bool IsBonusAvailable()
@@ -67,9 +70,9 @@ public class UpgradeData : ScriptableObject
     }
 
     // ==========================
-    // MÉTODO: BuyBonus()
+    // MÃ‰TODO: BuyBonus()
     // Intenta comprar el bono (usa GoldManager.SpendGold).
-    // Devuelve true si la compra se realizó.
+    // Devuelve true si la compra se realizÃ³.
     // ==========================
     public bool BuyBonus()
     {
@@ -86,9 +89,9 @@ public class UpgradeData : ScriptableObject
     }
 
     // ==========================
-    // MÉTODO: GetEffectiveOPS()
+    // MÃ‰TODO: GetEffectiveOPS()
     // Devuelve el OPS que aporta la mejora teniendo en cuenta si el bono
-    // está comprado. No lo uses automáticamente hasta que decidas aplicarlo.
+    // estÃ¡ comprado. No lo uses automÃ¡ticamente hasta que decidas aplicarlo.
     // ==========================
     public double GetEffectiveOPS()
     {

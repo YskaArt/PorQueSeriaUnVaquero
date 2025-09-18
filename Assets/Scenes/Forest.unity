@@ -2520,6 +2520,7 @@ GameObject:
   - component: {fileID: 295519024}
   - component: {fileID: 295519026}
   - component: {fileID: 295519025}
+  - component: {fileID: 295519027}
   m_Layer: 5
   m_Name: PanelMejoras
   m_TagString: Untagged
@@ -2585,6 +2586,56 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 295519023}
   m_CullTransparentMesh: 1
+--- !u!114 &295519027
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 295519023}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 26e776820836849459c4957cc748c1e8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  upgrades:
+  - {fileID: 662285437}
+  - {fileID: 334261202}
+  - {fileID: 446549848}
+  - {fileID: 996707081}
+  - {fileID: 829946202}
+  - {fileID: 227447334}
+  - {fileID: 1980458277}
+  - {fileID: 1137857746}
+  - {fileID: 1069835498}
+  - {fileID: 247589656}
+  - {fileID: 53959996}
+  - {fileID: 1372868956}
+  - {fileID: 426175278}
+  - {fileID: 1350608043}
+  - {fileID: 369564306}
+  - {fileID: 1324694215}
+  - {fileID: 1183981621}
+  - {fileID: 489414772}
+  upgradeVisuals:
+  - {fileID: 400223487}
+  - {fileID: 355357120}
+  - {fileID: 939879386}
+  - {fileID: 1847756417}
+  - {fileID: 1931856644}
+  - {fileID: 1082924498}
+  - {fileID: 905989820}
+  - {fileID: 1396754331}
+  - {fileID: 1399556294}
+  - {fileID: 1310117485}
+  - {fileID: 1355589166}
+  - {fileID: 2003491156}
+  - {fileID: 2094846799}
+  - {fileID: 1665555581}
+  - {fileID: 664368392}
+  - {fileID: 1357924402}
+  - {fileID: 1214117761}
+  - {fileID: 219990050}
 --- !u!1 &296182253
 GameObject:
   m_ObjectHideFlags: 0
@@ -22023,9 +22074,9 @@ MonoBehaviour:
     m_Top: 0
     m_Bottom: 0
   m_ChildAlignment: 0
-  m_Spacing: -1.1
-  m_ChildForceExpandWidth: 1
-  m_ChildForceExpandHeight: 1
+  m_Spacing: 12
+  m_ChildForceExpandWidth: 0
+  m_ChildForceExpandHeight: 0
   m_ChildControlWidth: 0
   m_ChildControlHeight: 0
   m_ChildScaleWidth: 0

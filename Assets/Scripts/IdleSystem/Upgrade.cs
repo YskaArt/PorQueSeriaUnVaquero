@@ -21,6 +21,10 @@ public class Upgrade : MonoBehaviour
     [SerializeField] private Button upgradeButton;              // Botón para comprar
     [SerializeField] private Image fillImage;                   // Imagen tipo Filled (progreso hacia el costo)
 
+    [Header("Colores de la barra de progreso")]
+    [SerializeField] private Color fillColorNotEnough = Color.red;
+    [SerializeField] private Color fillColorEnough = Color.green;
+
     // ==========================
     // ESTADO INTERNO
     // ==========================
@@ -210,7 +214,10 @@ public class Upgrade : MonoBehaviour
         {
             upgradeButton.interactable = false;
             if (fillImage != null)
+            {
                 fillImage.fillAmount = 0f;
+                fillImage.color = fillColorNotEnough;
+            }
             return;
         }
 
@@ -224,6 +231,7 @@ public class Upgrade : MonoBehaviour
         {
             float progress = (totalCost <= 0) ? 1f : Mathf.Clamp01((float)(gold / totalCost));
             fillImage.fillAmount = progress;
+            fillImage.color = canBuy ? fillColorEnough : fillColorNotEnough;
         }
     }
 
@@ -234,5 +242,11 @@ public class Upgrade : MonoBehaviour
     public void ForceUpdateUI()
     {
         UpdateUI();
+    }
+
+    // New: Expose UpgradeData so other managers can read properties
+    public UpgradeData GetUpgradeData()
+    {
+        return upgradeData;
     }
 }

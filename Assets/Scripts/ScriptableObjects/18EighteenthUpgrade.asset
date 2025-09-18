@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 52246123c94e16d4fbab69feb83aaade, type: 3}
   m_Name: 18EighteenthUpgrade
   m_EditorClassIdentifier: 
-  upgradeName: 18
+  upgradeName: Insignia de Sheriff
   baseCost: 5e+61
   costMultiplier: 1.35
   goldPerSecondPerLevel: 5e+34
