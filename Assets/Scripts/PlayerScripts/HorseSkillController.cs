@@ -17,13 +17,17 @@ public class HorseSkillController : MonoBehaviour
     [Header("Enemigos")]
     [SerializeField] private EnemySpawner enemySpawner;
     [SerializeField] private float spawnMultiplier = 0.5f; // Modificador del spawn de enemigos durante la habilidad
+    [SerializeField] private float enemySpeedMultiplier = 3f; // Modificador de velocidad de enemigos durante la habilidad
 
     [Header("Velocidad Afectada")]
     [SerializeField] private InfiniteTilemapLoop tilemapMover;
-    [SerializeField] private float speedMultiplier = 3f; // Velocidad del scroll durante la habilidad
+    [SerializeField] private float worldSpeedMultiplier = 3f; // Velocidad del scroll durante la habilidad
 
     private float originalScrollSpeed;
     private float originalMinSpawn, originalMaxSpawn;
+    private float originalEnemyFallSpeed = 5f; // Valor por defecto, se ajusta en runtime
+    private bool originalHorseSkillActive = false; // Estado original de la habilidad del caballo
+    private float originalNormalEnemySpeed = 5f; // Velocidad original de los enemigos
 
     private Coroutine activeSkillCoroutine;
     private bool isSkillActive = false;
@@ -39,6 +43,13 @@ public class HorseSkillController : MonoBehaviour
         originalScrollSpeed = tilemapMover.ScrollSpeed;
         originalMinSpawn = enemySpawner.MinSpawnTime;
         originalMaxSpawn = enemySpawner.MaxSpawnTime;
+        originalHorseSkillActive = enemySpawner.IsHorseSkillActive;
+        originalNormalEnemySpeed = enemySpawner.NormalEnemySpeed;
+
+        // Detectar velocidad original de los enemigos activos (si hay alguno)
+        var enemies = FindObjectsOfType<RunnerEnemy>();
+        if (enemies.Length > 0)
+            originalEnemyFallSpeed = enemies[0].GetFallSpeed();
     }
 
     // MÉTODO: Update()
@@ -66,9 +77,19 @@ public class HorseSkillController : MonoBehaviour
 
         // Animación y velocidad
         playerAnimator.SetBool("Horse", true);
-        tilemapMover.ScrollSpeed = originalScrollSpeed * speedMultiplier;
+        tilemapMover.ScrollSpeed = originalScrollSpeed * worldSpeedMultiplier;
         enemySpawner.MinSpawnTime = originalMinSpawn * spawnMultiplier;
         enemySpawner.MaxSpawnTime = originalMaxSpawn * spawnMultiplier;
+        enemySpawner.IsHorseSkillActive = true;
+        enemySpawner.HorseSkillEnemySpeed = originalEnemyFallSpeed * enemySpeedMultiplier;
+        enemySpawner.NormalEnemySpeed = originalEnemyFallSpeed;
+
+        // Cambiar velocidad de todos los enemigos activos
+        var enemies = FindObjectsOfType<RunnerEnemy>();
+        foreach (var enemy in enemies)
+        {
+            enemy.SetFallSpeed(originalEnemyFallSpeed * enemySpeedMultiplier);
+        }
 
         activeSkillCoroutine = StartCoroutine(HorseDurationCoroutine());
     }
@@ -92,6 +113,16 @@ public class HorseSkillController : MonoBehaviour
         tilemapMover.ScrollSpeed = originalScrollSpeed;
         enemySpawner.MinSpawnTime = originalMinSpawn;
         enemySpawner.MaxSpawnTime = originalMaxSpawn;
+        enemySpawner.IsHorseSkillActive = originalHorseSkillActive;
+        enemySpawner.HorseSkillEnemySpeed = originalEnemyFallSpeed * enemySpeedMultiplier;
+        enemySpawner.NormalEnemySpeed = originalNormalEnemySpeed;
+
+        // Restaurar velocidad de todos los enemigos activos
+        var enemies = FindObjectsOfType<RunnerEnemy>();
+        foreach (var enemy in enemies)
+        {
+            enemy.SetFallSpeed(originalEnemyFallSpeed);
+        }
 
         playerAnimator.SetBool("Horse", false);
     }

@@ -291,9 +291,9 @@ RectTransform:
   - {fileID: 1704098909}
   m_Father: {fileID: 586282095}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 277.68344, y: -1644}
   m_SizeDelta: {x: 555.3669, y: 120}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &32719063
@@ -468,6 +468,8 @@ MonoBehaviour:
   priceText: {fileID: 110808062}
   upgradeButton: {fileID: 60987982}
   fillImage: {fileID: 474168880}
+  fillColorNotEnough: {r: 1, g: 0, b: 0, a: 1}
+  fillColorEnough: {r: 0, g: 1, b: 0, a: 1}
 --- !u!114 &60987982
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -774,7 +776,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &86152021
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1004,9 +1006,9 @@ RectTransform:
   - {fileID: 1846380782}
   m_Father: {fileID: 586282095}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 277.68344, y: -588}
   m_SizeDelta: {x: 555.3669, y: 120}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &106114234
@@ -1242,6 +1244,8 @@ MonoBehaviour:
   priceText: {fileID: 474580321}
   upgradeButton: {fileID: 121397575}
   fillImage: {fileID: 1364336937}
+  fillColorNotEnough: {r: 1, g: 0, b: 0, a: 1}
+  fillColorEnough: {r: 0, g: 1, b: 0, a: 1}
 --- !u!114 &121397575
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2333,8 +2337,8 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 1645787352}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 0.6415971}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0.0000076293945, y: 1}
   m_SizeDelta: {x: 18.84997, y: 16.28775}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -3261,6 +3265,8 @@ MonoBehaviour:
   priceText: {fileID: 143448141}
   upgradeButton: {fileID: 317992175}
   fillImage: {fileID: 71811569}
+  fillColorNotEnough: {r: 1, g: 0, b: 0, a: 1}
+  fillColorEnough: {r: 0, g: 1, b: 0, a: 1}
 --- !u!114 &317992175
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3734,6 +3740,8 @@ MonoBehaviour:
   priceText: {fileID: 286493131}
   upgradeButton: {fileID: 360303624}
   fillImage: {fileID: 1729455917}
+  fillColorNotEnough: {r: 1, g: 0, b: 0, a: 1}
+  fillColorEnough: {r: 0, g: 1, b: 0, a: 1}
 --- !u!114 &360303624
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3834,7 +3842,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &380366705
 RectTransform:
   m_ObjectHideFlags: 0
@@ -4002,6 +4010,8 @@ MonoBehaviour:
   priceText: {fileID: 1328375134}
   upgradeButton: {fileID: 408369098}
   fillImage: {fileID: 550992372}
+  fillColorNotEnough: {r: 1, g: 0, b: 0, a: 1}
+  fillColorEnough: {r: 0, g: 1, b: 0, a: 1}
 --- !u!114 &408369098
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5915,6 +5925,8 @@ MonoBehaviour:
   priceText: {fileID: 922284689}
   upgradeButton: {fileID: 470645449}
   fillImage: {fileID: 883969631}
+  fillColorNotEnough: {r: 1, g: 0, b: 0, a: 1}
+  fillColorEnough: {r: 0, g: 1, b: 0, a: 1}
 --- !u!114 &470645449
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6319,9 +6331,9 @@ RectTransform:
   - {fileID: 2069334270}
   m_Father: {fileID: 586282095}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 277.68344, y: -60}
   m_SizeDelta: {x: 555.3669, y: 120}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &494092626
@@ -7144,6 +7156,8 @@ MonoBehaviour:
   priceText: {fileID: 322349938}
   upgradeButton: {fileID: 582280069}
   fillImage: {fileID: 838571964}
+  fillColorNotEnough: {r: 1, g: 0, b: 0, a: 1}
+  fillColorEnough: {r: 0, g: 1, b: 0, a: 1}
 --- !u!114 &582280069
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8398,9 +8412,9 @@ RectTransform:
   - {fileID: 664844798}
   m_Father: {fileID: 586282095}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 277.68344, y: -1380}
   m_SizeDelta: {x: 555.3669, y: 120}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &673345759
@@ -8962,9 +8976,9 @@ RectTransform:
   - {fileID: 1729719145}
   m_Father: {fileID: 586282095}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 277.68344, y: -852}
   m_SizeDelta: {x: 555.3669, y: 120}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &704156131
@@ -10296,9 +10310,9 @@ RectTransform:
   - {fileID: 799247152}
   m_Father: {fileID: 586282095}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 277.68344, y: -720}
   m_SizeDelta: {x: 555.3669, y: 120}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &880306073
@@ -10978,9 +10992,9 @@ RectTransform:
   - {fileID: 1046372625}
   m_Father: {fileID: 586282095}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 277.68344, y: -2304}
   m_SizeDelta: {x: 555.3669, y: 120}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &940545611
@@ -11408,9 +11422,9 @@ RectTransform:
   - {fileID: 2001652344}
   m_Father: {fileID: 586282095}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 277.68344, y: -456}
   m_SizeDelta: {x: 555.3669, y: 120}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1003597063
@@ -11654,9 +11668,9 @@ RectTransform:
   - {fileID: 1026745256}
   m_Father: {fileID: 586282095}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 277.68344, y: -192}
   m_SizeDelta: {x: 555.3669, y: 120}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1014060408
@@ -11756,6 +11770,8 @@ MonoBehaviour:
   priceText: {fileID: 700441930}
   upgradeButton: {fileID: 1015987078}
   fillImage: {fileID: 681811836}
+  fillColorNotEnough: {r: 1, g: 0, b: 0, a: 1}
+  fillColorEnough: {r: 0, g: 1, b: 0, a: 1}
 --- !u!114 &1015987078
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12273,6 +12289,8 @@ MonoBehaviour:
   priceText: {fileID: 1678531125}
   upgradeButton: {fileID: 1057063459}
   fillImage: {fileID: 1214394355}
+  fillColorNotEnough: {r: 1, g: 0, b: 0, a: 1}
+  fillColorEnough: {r: 0, g: 1, b: 0, a: 1}
 --- !u!114 &1057063459
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12636,9 +12654,9 @@ RectTransform:
   - {fileID: 1901320396}
   m_Father: {fileID: 586282095}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 277.68344, y: -1776}
   m_SizeDelta: {x: 555.3669, y: 120}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1102177973
@@ -13020,6 +13038,8 @@ MonoBehaviour:
   priceText: {fileID: 1790566422}
   upgradeButton: {fileID: 1182335317}
   fillImage: {fileID: 728160326}
+  fillColorNotEnough: {r: 1, g: 0, b: 0, a: 1}
+  fillColorEnough: {r: 0, g: 1, b: 0, a: 1}
 --- !u!114 &1182335317
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13213,9 +13233,9 @@ RectTransform:
   - {fileID: 500317048}
   m_Father: {fileID: 586282095}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 277.68344, y: -2040}
   m_SizeDelta: {x: 555.3669, y: 120}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1224885919
@@ -13292,9 +13312,9 @@ RectTransform:
   - {fileID: 1829931667}
   m_Father: {fileID: 586282095}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 277.68344, y: -324}
   m_SizeDelta: {x: 555.3669, y: 120}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1225310326
@@ -13727,6 +13747,8 @@ MonoBehaviour:
   priceText: {fileID: 1993223795}
   upgradeButton: {fileID: 1283932778}
   fillImage: {fileID: 1255707535}
+  fillColorNotEnough: {r: 1, g: 0, b: 0, a: 1}
+  fillColorEnough: {r: 0, g: 1, b: 0, a: 1}
 --- !u!114 &1283932778
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13868,6 +13890,8 @@ MonoBehaviour:
   priceText: {fileID: 15676873}
   upgradeButton: {fileID: 1289179554}
   fillImage: {fileID: 314123775}
+  fillColorNotEnough: {r: 1, g: 0, b: 0, a: 1}
+  fillColorEnough: {r: 0, g: 1, b: 0, a: 1}
 --- !u!114 &1289179554
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -14822,6 +14846,8 @@ MonoBehaviour:
   priceText: {fileID: 685661749}
   upgradeButton: {fileID: 1419464266}
   fillImage: {fileID: 462897910}
+  fillColorNotEnough: {r: 1, g: 0, b: 0, a: 1}
+  fillColorEnough: {r: 0, g: 1, b: 0, a: 1}
 --- !u!114 &1419464266
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -14940,9 +14966,9 @@ RectTransform:
   - {fileID: 2143804221}
   m_Father: {fileID: 586282095}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 277.68344, y: -1908}
   m_SizeDelta: {x: 555.3669, y: 120}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1422867208
@@ -15316,6 +15342,8 @@ MonoBehaviour:
   priceText: {fileID: 87579440}
   upgradeButton: {fileID: 1471001002}
   fillImage: {fileID: 792571895}
+  fillColorNotEnough: {r: 1, g: 0, b: 0, a: 1}
+  fillColorEnough: {r: 0, g: 1, b: 0, a: 1}
 --- !u!114 &1471001002
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15802,6 +15830,8 @@ MonoBehaviour:
   priceText: {fileID: 1892210536}
   upgradeButton: {fileID: 1568715147}
   fillImage: {fileID: 2085438349}
+  fillColorNotEnough: {r: 1, g: 0, b: 0, a: 1}
+  fillColorEnough: {r: 0, g: 1, b: 0, a: 1}
 --- !u!114 &1568715147
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16056,9 +16086,9 @@ RectTransform:
   - {fileID: 203676900}
   m_Father: {fileID: 586282095}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 277.68344, y: -1512}
   m_SizeDelta: {x: 555.3669, y: 120}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1578696438
@@ -16364,9 +16394,9 @@ RectTransform:
   - {fileID: 669215021}
   m_Father: {fileID: 586282095}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 277.68344, y: -984}
   m_SizeDelta: {x: 555.3669, y: 120}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1612938429
@@ -17966,6 +17996,8 @@ MonoBehaviour:
   priceText: {fileID: 1576027173}
   upgradeButton: {fileID: 1752164072}
   fillImage: {fileID: 440535358}
+  fillColorNotEnough: {r: 1, g: 0, b: 0, a: 1}
+  fillColorEnough: {r: 0, g: 1, b: 0, a: 1}
 --- !u!114 &1752164072
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -19762,6 +19794,8 @@ MonoBehaviour:
   priceText: {fileID: 644498568}
   upgradeButton: {fileID: 1913012615}
   fillImage: {fileID: 1599413445}
+  fillColorNotEnough: {r: 1, g: 0, b: 0, a: 1}
+  fillColorEnough: {r: 0, g: 1, b: 0, a: 1}
 --- !u!114 &1913012615
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -20229,9 +20263,9 @@ RectTransform:
   - {fileID: 1757187947}
   m_Father: {fileID: 586282095}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 277.68344, y: -2172}
   m_SizeDelta: {x: 555.3669, y: 120}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1945304004
@@ -20331,6 +20365,8 @@ MonoBehaviour:
   priceText: {fileID: 899761037}
   upgradeButton: {fileID: 1974797670}
   fillImage: {fileID: 1920349604}
+  fillColorNotEnough: {r: 1, g: 0, b: 0, a: 1}
+  fillColorEnough: {r: 0, g: 1, b: 0, a: 1}
 --- !u!114 &1974797670
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -20449,9 +20485,9 @@ RectTransform:
   - {fileID: 250164099}
   m_Father: {fileID: 586282095}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 277.68344, y: -1248}
   m_SizeDelta: {x: 555.3669, y: 120}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1975029121
@@ -21013,9 +21049,9 @@ RectTransform:
   - {fileID: 708185784}
   m_Father: {fileID: 586282095}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 277.68344, y: -1116}
   m_SizeDelta: {x: 555.3669, y: 120}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2012645639
@@ -22004,13 +22040,17 @@ MonoBehaviour:
   enemyPrefabs:
   - {fileID: 3014241384524465555, guid: 31ddf3f05bbf6164d856b901a9933c69, type: 3}
   - {fileID: 4947854212352758550, guid: a1543940da9241649832d382cd069b46, type: 3}
+  bonusPrefabs: []
   spawnPoints:
   - {fileID: 925893970}
   - {fileID: 607924006}
   - {fileID: 122991651}
   minSpawnTime: 2
   maxSpawnTime: 7
+  patternInterval: 5
+  bonusInterval: 20
   worldContainer: {fileID: 1838056866}
+  initialPoolPerPrefab: 5
 --- !u!4 &2116821078
 Transform:
   m_ObjectHideFlags: 0
@@ -22020,7 +22060,7 @@ Transform:
   m_GameObject: {fileID: 2116821076}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.049999952, y: 3.4500008, z: 0}
+  m_LocalPosition: {x: 0.049999952, y: 10.57, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -22451,9 +22491,17 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 1013978088}
     - target: {fileID: 8224471605282392135, guid: 53e7e4f9ed227db4885bee42f544bac2, type: 3}
+      propertyPath: skillDuration
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 8224471605282392135, guid: 53e7e4f9ed227db4885bee42f544bac2, type: 3}
       propertyPath: playerAnimator
       value: 
       objectReference: {fileID: 1069634767}
+    - target: {fileID: 8224471605282392135, guid: 53e7e4f9ed227db4885bee42f544bac2, type: 3}
+      propertyPath: spawnMultiplier
+      value: 2
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:
     - {fileID: 4187300179777277154, guid: 53e7e4f9ed227db4885bee42f544bac2, type: 3}

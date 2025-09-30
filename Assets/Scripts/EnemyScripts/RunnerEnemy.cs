@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class RunnerEnemy : MonoBehaviour
+public class RunnerEnemy : MonoBehaviour, IPoolResettable
 {
     // Velocidad de caída (debe coincidir con la velocidad del scroll del mapa).
     [SerializeField] private float fallSpeed = 5f;
@@ -8,45 +8,67 @@ public class RunnerEnemy : MonoBehaviour
     // Límite mínimo en Y antes de eliminar el objeto (por ejemplo, fuera de pantalla).
     [SerializeField] private float minY = -25f;
 
-    // Tiempo máximo de vida del enemigo antes de autodestruirse (en segundos).
+    // Tiempo máximo de vida del enemigo antes de volver a la pool (en segundos).
     [SerializeField] private float lifetime = 10f;
 
     // Temporizador interno que cuenta hacia atrás.
     private float lifetimeTimer;
 
-    // MÉTODO: Start()
-    // Inicializa el temporizador de vida con el valor configurado.
+    // M TODO: Start() -> ahora inicializamos en OnSpawn (pool)
     void Start()
     {
+        // Si se instancia sin pasar por la pool, inicializar el temporizador
         lifetimeTimer = lifetime;
     }
 
-    // MÉTODO: Update()
-    // Ejecuta cada frame:
-    // - Mueve al enemigo hacia abajo en el eje Y (simulando scroll).
-    // - Reduce el temporizador de vida.
-    // - Destruye el objeto si se cumple alguna condición:
-    //   (a) Tiempo agotado.
-    //   (b) Salió del límite inferior de la pantalla.
     void Update()
     {
+        // Solo actualizar si el objeto está activo
+        if (!gameObject.activeInHierarchy) return;
+
         transform.position += Vector3.down * fallSpeed * Time.deltaTime;
 
         lifetimeTimer -= Time.deltaTime;
         if (lifetimeTimer <= 0f || transform.position.y <= minY)
         {
-            Destroy(gameObject);
+            ReturnToPool();
         }
     }
 
-    // MÉTODO: Eliminar()
     // Método público para eliminar al enemigo manualmente (por ejemplo, cuando recibe un disparo).
     // - Suma oro al jugador usando GoldManager.
-    // - Destruye el objeto.
-    // Se puede ampliar para animación o efectos de muerte.
+    // - Devuelve el objeto a la pool en vez de destruirlo.
     public void Eliminar()
     {
-        GoldManager.Instance.AddGold(1);
-        Destroy(gameObject);
+        if (GoldManager.Instance != null)
+            GoldManager.Instance.AddGold(1);
+
+        ReturnToPool();
+    }
+
+    // Devuelve el objeto a la pool (lo desactiva)
+    private void ReturnToPool()
+    {
+        // Aquí puedes resetear efectos, partículas, etc. antes de desactivar.
+        gameObject.SetActive(false);
+    }
+
+    // Implementación de IPoolResettable
+    public void OnSpawn()
+    {
+        // Reiniciar temporizador y cualquier estado necesario al salir de la pool
+        lifetimeTimer = lifetime;
+    }
+
+    // Nuevo: Permite modificar la velocidad desde fuera
+    public void SetFallSpeed(float speed)
+    {
+        fallSpeed = speed;
+    }
+
+    // Nuevo: Permite leer la velocidad actual
+    public float GetFallSpeed()
+    {
+        return fallSpeed;
     }
 }
