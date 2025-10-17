@@ -91,6 +91,9 @@ public class HorseSkillController : MonoBehaviour
             enemy.SetFallSpeed(originalEnemyFallSpeed * enemySpeedMultiplier);
         }
 
+        // Spawn inmediato para evitar el intervalo inicial
+        enemySpawner.SpawnImmediatePattern();
+
         activeSkillCoroutine = StartCoroutine(HorseDurationCoroutine());
     }
 

@@ -28,6 +28,9 @@ public class EnemySpawner : MonoBehaviour
     private float bonusTimer;
     private Coroutine spawnCoroutine;
 
+    // Control para evitar solapamiento de patrones
+    private bool isSpawningPattern = false;
+
     public bool IsHorseSkillActive { get; set; } = false;
     public float HorseSkillEnemySpeed { get; set; } = 1f;
     public float NormalEnemySpeed { get; set; } = 5f;
@@ -88,12 +91,22 @@ public class EnemySpawner : MonoBehaviour
 
     private IEnumerator SpawnRoutine()
     {
+        // Espera inicial aleatoria
         yield return new WaitForSeconds(Random.Range(minSpawnTime, maxSpawnTime));
         while (isSpawning)
         {
             // Si la habilidad está activa, spawnea patrones de enemigos sin esperar entre ellos
             if (IsHorseSkillActive)
             {
+                // Si no hay enemigos activos, forzar spawn inmediato y esperar un pequeño lapso
+                if (!HasActiveEnemies())
+                {
+                    SpawnImmediatePattern();
+                    yield return new WaitForSeconds(0.1f);
+                    continue;
+                }
+
+                // SpawnPattern internamente evita solapamientos
                 yield return StartCoroutine(SpawnPattern());
                 // No espera entre patrones, solo el stagger interno de cada patrón
             }
@@ -118,16 +131,36 @@ public class EnemySpawner : MonoBehaviour
         }
     }
 
+    // Retorna true si existe al menos un RunnerEnemy activo en escena
+    private bool HasActiveEnemies()
+    {
+        var enemies = FindObjectsOfType<RunnerEnemy>();
+        for (int i = 0; i < enemies.Length; i++)
+        {
+            if (enemies[i].gameObject.activeInHierarchy)
+                return true;
+        }
+        return false;
+    }
+
     private IEnumerator SpawnPattern()
     {
+        if (isSpawningPattern) yield break; // evitar solapamiento
+        isSpawningPattern = true;
+
         if (enemyPrefabs.Count == 0 || spawnPoints.Length == 0)
+        {
+            isSpawningPattern = false;
             yield break;
+        }
+
         int lineIndex = Random.Range(0, spawnPoints.Length);
         Transform spawnPoint = spawnPoints[lineIndex];
         int count = IsHorseSkillActive ? 3 : Random.Range(2, 5); // 3 si habilidad activa, 2-4 normal
         int prefabIndex = Random.Range(0, enemyPrefabs.Count);
         GameObject prefab = enemyPrefabs[prefabIndex];
         float stagger = 0.7f;
+
         for (int i = 0; i < count; i++)
         {
             var go = SpawnFromPool(prefab, spawnPoint.position, Quaternion.identity);
@@ -138,6 +171,8 @@ public class EnemySpawner : MonoBehaviour
             }
             yield return new WaitForSeconds(stagger);
         }
+
+        isSpawningPattern = false;
     }
 
     private void SpawnBonus()
@@ -162,6 +197,13 @@ public class EnemySpawner : MonoBehaviour
         if (poolable != null)
             poolable.OnSpawn();
         return go;
+    }
+
+    // Permite disparar un patron inmediatamente desde otros scripts (ej: al activar la skill)
+    public void SpawnImmediatePattern()
+    {
+        if (!isSpawning || isSpawningPattern) return;
+        StartCoroutine(SpawnPattern());
     }
 
     public void StopSpawning()
