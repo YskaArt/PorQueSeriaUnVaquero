@@ -106,8 +106,8 @@
       },
       "url": "https://packages.unity.com"
     },
-    "com.unity.adaptiveperformance.samsung.android": {
-      "version": "5.1.0",
+    "com.unity.adaptiveperformance.google.android": {
+      "version": "5.1.6",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -196,7 +196,7 @@
       }
     },
     "com.unity.ide.rider": {
-      "version": "3.0.37",
+      "version": "3.0.38",
       "depth": 0,
       "source": "registry",
       "dependencies": {
