@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 52246123c94e16d4fbab69feb83aaade, type: 3}
   m_Name: 13ThirteenthUpgrade
   m_EditorClassIdentifier: 
-  upgradeName: "Rifle de Precisi\xF3n"
+  upgradeName: Dinamita
   baseCost: 1.5e+17
   costMultiplier: 1.35
   goldPerSecondPerLevel: 260000000000000
@@ -22,3 +22,4 @@ MonoBehaviour:
   bonusCost: 10000
   bonusMultiplier: 2
   bonusPurchased: 0
+  upgradeData: {fileID: 0}

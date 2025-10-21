@@ -22,3 +22,4 @@ MonoBehaviour:
   bonusCost: 10000
   bonusMultiplier: 2
   bonusPurchased: 0
+  upgradeData: {fileID: 0}

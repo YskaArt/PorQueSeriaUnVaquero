@@ -21,7 +21,7 @@ public class EnemySpawner : MonoBehaviour
 
     [Header("Pool")]
     [SerializeField] private Transform worldContainer;
-    [SerializeField] private int initialPoolPerPrefab = 5;
+    [SerializeField] private int initialPoolPerPrefab = 10;
 
     private Dictionary<GameObject, List<GameObject>> pools = new Dictionary<GameObject, List<GameObject>>();
     private bool isSpawning;
@@ -159,7 +159,7 @@ public class EnemySpawner : MonoBehaviour
         int count = IsHorseSkillActive ? 3 : Random.Range(2, 5); // 3 si habilidad activa, 2-4 normal
         int prefabIndex = Random.Range(0, enemyPrefabs.Count);
         GameObject prefab = enemyPrefabs[prefabIndex];
-        float stagger = 0.7f;
+        float stagger = 0.9f;
 
         for (int i = 0; i < count; i++)
         {

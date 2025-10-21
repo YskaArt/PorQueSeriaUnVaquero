@@ -26,7 +26,10 @@ public class GoldManager : MonoBehaviour
     // ==========================
     [SerializeField] private double gold;          // Oro actual
     [SerializeField] private double goldPerSecond; // Oro generado automáticamente por segundo
-    private float timer;                           // Contador para sumar oro por segundo
+
+    // Control para actualizar la UI a una cadencia razonable
+    [SerializeField] private float uiUpdateInterval = 0.1f; // intervalo en segundos para refrescar UI durante progresión
+    private float uiUpdateTimer = 0f;
 
     // Propiedad de solo lectura (acceso público al oro actual)
     public double CurrentGold => gold;
@@ -81,17 +84,24 @@ public class GoldManager : MonoBehaviour
         AssignUIReferences();
         UpdateGoldUI();
     }
+
     // ==========================
     // MÉTODO: Update()
-    // Incrementa oro automáticamente cada segundo
+    // Incrementa oro de forma progresiva cada frame según goldPerSecond
     // ==========================
     private void Update()
     {
-        timer += Time.deltaTime;
-        if (timer >= 1f)
+        // Sumar progresivamente según el tiempo transcurrido
+        if (Math.Abs(goldPerSecond) > double.Epsilon)
         {
-            gold += goldPerSecond;
-            timer = 0f;
+            gold += goldPerSecond * Time.deltaTime;
+        }
+
+        // Actualizar la UI a una cadencia controlada para evitar llamadas excesivas
+        uiUpdateTimer += Time.deltaTime;
+        if (uiUpdateTimer >= uiUpdateInterval)
+        {
+            uiUpdateTimer = 0f;
             UpdateGoldUI();
             OnGoldChanged?.Invoke();
         }
@@ -143,7 +153,7 @@ public class GoldManager : MonoBehaviour
         if (goldText == null || goldPerSecondText == null)
         {
             // Buscar dinámicamente si faltan referencias
-            var uiTexts = UnityEngine.Object.FindObjectsByType<TextMeshProUGUI>(FindObjectsSortMode.None);
+            var uiTexts = UnityEngine.Object.FindObjectsOfType<TextMeshProUGUI>(true);
             foreach (var text in uiTexts)
             {
                 if (text.name == "GoldText") goldText = text;
@@ -179,10 +189,7 @@ public class GoldManager : MonoBehaviour
     // ==========================
     // MÉTODO: SetTextReferences()
     // Permite reasignar textos desde otro script de UI (ej: UIManager)
-    // ==========================}
-    /// <summary>
-    /// Busca en la escena los objetos que deberían mostrar el oro y OPS.
-    /// </summary>
+    // ==========================
     private void AssignUIReferences()
     {
         if (goldText == null)

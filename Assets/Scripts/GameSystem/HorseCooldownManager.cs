@@ -59,4 +59,22 @@ public class HorseCooldownManager : MonoBehaviour
     {
         return currentCooldown / cooldownDuration;
     }
+
+    // Nuevo: Obtener tiempo restante de cooldown en segundos
+    public float GetRemainingCooldown()
+    {
+        return Mathf.Max(currentCooldown, 0f);
+    }
+
+    // Nuevo: Establecer tiempo restante de cooldown (usado al cargar partida)
+    public void SetRemainingCooldown(float seconds)
+    {
+        currentCooldown = Mathf.Clamp(seconds, 0f, cooldownDuration);
+    }
+
+    // Nuevo: Obtener la duración total del cooldown
+    public float GetCooldownDuration()
+    {
+        return cooldownDuration;
+    }
 }

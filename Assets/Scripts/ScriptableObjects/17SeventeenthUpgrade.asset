@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 52246123c94e16d4fbab69feb83aaade, type: 3}
   m_Name: 17SeventeenthUpgrade
   m_EditorClassIdentifier: 
-  upgradeName: Colt Reluciente
+  upgradeName: Espiritu
   baseCost: 5e+51
   costMultiplier: 1.35
   goldPerSecondPerLevel: 5e+29
@@ -22,3 +22,4 @@ MonoBehaviour:
   bonusCost: 10000
   bonusMultiplier: 2
   bonusPurchased: 0
+  upgradeData: {fileID: 0}

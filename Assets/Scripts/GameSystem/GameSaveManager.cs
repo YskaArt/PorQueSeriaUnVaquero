@@ -31,11 +31,15 @@ public class GameSaveManager : MonoBehaviour
 
         Instance = this;
         DontDestroyOnLoad(gameObject);
+
+        // Cargar los datos en Awake para que estén disponibles durante Start de otros managers
+        LoadGame();
     }
 
     private void Start()
     {
-        LoadGame();
+        // Si hay datos cargados pendientes, aplicar a los managers ahora
+        ApplyLoadedDataToManagers();
     }
 
     public void SaveGame()
@@ -48,6 +52,7 @@ public class GameSaveManager : MonoBehaviour
             upgrades = new List<UpgradeSaveData>(),
             lastScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name,
             timeBeforeMiniGame = GameStartManager.Instance != null ? GameStartManager.Instance.GetRemainingTime() : 0,
+            horseCooldownRemaining = HorseCooldownManager.Instance != null ? HorseCooldownManager.Instance.GetRemainingCooldown() : 0f,
             lastSaveTimestamp = DateTime.Now.ToBinary()
         };
 
@@ -109,6 +114,12 @@ public class GameSaveManager : MonoBehaviour
             GoldManager.Instance.SetGoldPerSecond(totalOPS);
         }
 
+        // Restaurar cooldown del caballo si existe la instancia
+        if (HorseCooldownManager.Instance != null)
+        {
+            HorseCooldownManager.Instance.SetRemainingCooldown(loadedData.horseCooldownRemaining);
+        }
+
         Debug.Log("✅ Juego cargado: " + json);
 
         // Si GoldManager no estaba disponible en el momento de la carga, apply later when it becomes available
@@ -147,6 +158,12 @@ public class GameSaveManager : MonoBehaviour
         if (GoldManager.Instance != null)
         {
             GoldManager.Instance.SetGoldPerSecond(totalOPS);
+        }
+
+        // Aplicar cooldown del caballo si existe la instancia
+        if (HorseCooldownManager.Instance != null)
+        {
+            HorseCooldownManager.Instance.SetRemainingCooldown(loadedData.horseCooldownRemaining);
         }
 
         Debug.Log("GameSaveManager: Datos aplicados a los managers desde loadedData.");
@@ -195,6 +212,7 @@ public class GameSaveData
     public List<UpgradeSaveData> upgrades;
     public string lastScene;
     public float timeBeforeMiniGame;
+    public float horseCooldownRemaining;
     public long lastSaveTimestamp;
 }
 
