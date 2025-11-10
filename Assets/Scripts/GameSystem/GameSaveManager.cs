@@ -51,7 +51,7 @@ public class GameSaveManager : MonoBehaviour
             gold = GoldManager.Instance.CurrentGold,
             upgrades = new List<UpgradeSaveData>(),
             lastScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name,
-            timeBeforeMiniGame = GameStartManager.Instance != null ? GameStartManager.Instance.GetRemainingTime() : 0,
+            //timeBeforeMiniGame = GameManager.Instance != null ? GameManager.Instance.GetRemainingTime() : 0,
             horseCooldownRemaining = HorseCooldownManager.Instance != null ? HorseCooldownManager.Instance.GetRemainingCooldown() : 0f,
             lastSaveTimestamp = DateTime.Now.ToBinary()
         };

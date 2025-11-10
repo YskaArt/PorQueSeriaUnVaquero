@@ -14,44 +14,44 @@ public class EnemySpawner : MonoBehaviour
     [Header("Timing")]
     [SerializeField] private float minSpawnTime = 2f;
     [SerializeField] private float maxSpawnTime = 7f;
-    [Tooltip("Tiempo entre patrones (líneas de enemigos)")]
     [SerializeField] private float patternInterval = 5f;
-    [Tooltip("Intervalo entre aparición de objetos bonus")]
     [SerializeField] private float bonusInterval = 20f;
 
     [Header("Pool")]
     [SerializeField] private Transform worldContainer;
     [SerializeField] private int initialPoolPerPrefab = 10;
 
-    private Dictionary<GameObject, List<GameObject>> pools = new Dictionary<GameObject, List<GameObject>>();
-    private bool isSpawning;
-    private float bonusTimer;
-    private Coroutine spawnCoroutine;
+    // Velocidades públicas
+    public float NormalEnemySpeed { get; set; } = 5f;
+    public float HorseSkillEnemySpeed { get; set; } = 10f;
 
-    // Control para evitar solapamiento de patrones
+    // Estado interno
+    private Dictionary<GameObject, List<GameObject>> pools = new Dictionary<GameObject, List<GameObject>>();
+    private bool isSpawning = false;
+    private float bonusTimer = 0f;
+    private Coroutine spawnCoroutine;
     private bool isSpawningPattern = false;
 
-    public bool IsHorseSkillActive { get; set; } = false;
-    public float HorseSkillEnemySpeed { get; set; } = 1f;
-    public float NormalEnemySpeed { get; set; } = 5f;
+    // Frenzy / HorseMode
+    private bool frenzyMode = false;
+    private float frenzySpawnDelay = 0.12f; // default rapid fire
 
+    // Propiedades públicas para compatibilidad
+    public bool IsHorseSkillActive => frenzyMode;
     public float MinSpawnTime { get => minSpawnTime; set => minSpawnTime = value; }
     public float MaxSpawnTime { get => maxSpawnTime; set => maxSpawnTime = value; }
 
     private void Awake()
     {
         if (worldContainer == null) worldContainer = this.transform;
-        foreach (var prefab in enemyPrefabs)
-            EnsurePoolFor(prefab);
+        
         foreach (var prefab in bonusPrefabs)
             EnsurePoolFor(prefab);
     }
 
     private void Start()
     {
-        isSpawning = true;
-        bonusTimer = 0f;
-        spawnCoroutine = StartCoroutine(SpawnRoutine());
+        StartSpawning();
     }
 
     private void OnDisable()
@@ -59,6 +59,9 @@ public class EnemySpawner : MonoBehaviour
         StopSpawning();
     }
 
+    // -----------------------
+    // Pool helpers
+    // -----------------------
     private void EnsurePoolFor(GameObject prefab)
     {
         if (prefab == null) return;
@@ -79,73 +82,129 @@ public class EnemySpawner : MonoBehaviour
             EnsurePoolFor(prefab);
         var list = pools[prefab];
         for (int i = 0; i < list.Count; i++)
-        {
             if (!list[i].activeInHierarchy)
                 return list[i];
-        }
         var go = Instantiate(prefab, worldContainer);
         go.SetActive(false);
         list.Add(go);
         return go;
     }
 
-    private IEnumerator SpawnRoutine()
+    // -----------------------
+    // Control externo
+    // -----------------------
+    public void StopSpawning()
     {
-        // Espera inicial aleatoria
-        yield return new WaitForSeconds(Random.Range(minSpawnTime, maxSpawnTime));
-        while (isSpawning)
+        isSpawning = false;
+        if (spawnCoroutine != null)
         {
-            // Si la habilidad está activa, spawnea patrones de enemigos sin esperar entre ellos
-            if (IsHorseSkillActive)
-            {
-                // Si no hay enemigos activos, forzar spawn inmediato y esperar un pequeño lapso
-                if (!HasActiveEnemies())
-                {
-                    SpawnImmediatePattern();
-                    yield return new WaitForSeconds(0.1f);
-                    continue;
-                }
-
-                // SpawnPattern internamente evita solapamientos
-                yield return StartCoroutine(SpawnPattern());
-                // No espera entre patrones, solo el stagger interno de cada patrón
-            }
-            else
-            {
-                // Comportamiento normal: espera entre patrones
-                yield return StartCoroutine(SpawnPattern());
-                float wait = patternInterval;
-                float elapsed = 0f;
-                while (elapsed < wait)
-                {
-                    bonusTimer += Time.deltaTime;
-                    if (bonusTimer >= bonusInterval)
-                    {
-                        SpawnBonus();
-                        bonusTimer = 0f;
-                    }
-                    elapsed += Time.deltaTime;
-                    yield return null;
-                }
-            }
+            StopCoroutine(spawnCoroutine);
+            spawnCoroutine = null;
         }
+        StopAllCoroutines();
     }
 
-    // Retorna true si existe al menos un RunnerEnemy activo en escena
-    private bool HasActiveEnemies()
+    public void StartSpawning()
     {
-        var enemies = FindObjectsOfType<RunnerEnemy>();
-        for (int i = 0; i < enemies.Length; i++)
+        if (isSpawning) return;
+        isSpawning = true;
+        spawnCoroutine = StartCoroutine(SpawnRoutine());
+    }
+
+    public void RestartSpawning()
+    {
+        StopSpawning();
+        bonusTimer = 0f;
+        StartSpawning();
+    }
+
+    /// <summary>
+    /// Reemplaza la lista de enemyPrefabs por la nueva (no toca bonus).
+    /// </summary>
+    public void SetEnemyPool(List<GameObject> newEnemies)
+    {
+        // Mantener pools de bonus, eliminar pools de enemigos previos
+        var toRemove = new List<GameObject>();
+        foreach (var kv in pools)
         {
-            if (enemies[i].gameObject.activeInHierarchy)
-                return true;
+            if (!bonusPrefabs.Contains(kv.Key))
+                toRemove.Add(kv.Key);
         }
-        return false;
+        foreach (var k in toRemove)
+            pools.Remove(k);
+
+        enemyPrefabs.Clear();
+        if (newEnemies != null && newEnemies.Count > 0)
+        {
+            enemyPrefabs.AddRange(newEnemies);
+            foreach (var p in enemyPrefabs)
+                EnsurePoolFor(p);
+        }
+        Debug.Log($"[EnemySpawner] Enemy pool set: {enemyPrefabs.Count} prefabs.");
+    }
+
+    // -----------------------
+    // Horse / Frenzy mode
+    // -----------------------
+    /// <summary>
+    /// Entra en modo frenesí: spawn continuo SOLO enemigos y a la velocidad indicada.
+    /// </summary>
+    /// <param name="enemySpeedMultiplier">multiplica NormalEnemySpeed para new enemies</param>
+    /// <param name="spawnDelay">delay entre spawns en frenzy (ej: 0.12f)</param>
+    public void ActivateHorseMode(float enemySpeedMultiplier = 2f, float spawnDelay = 0.12f)
+    {
+        frenzyMode = true;
+        HorseSkillEnemySpeed = NormalEnemySpeed * Mathf.Max(1f, enemySpeedMultiplier);
+        frenzySpawnDelay = Mathf.Max(0.02f, spawnDelay);
+        Debug.Log("[EnemySpawner] HorseMode ACTIVATED");
+    }
+
+    public void DeactivateHorseMode()
+    {
+        frenzyMode = false;
+        Debug.Log("[EnemySpawner] HorseMode DEACTIVATED");
+    }
+
+    // -----------------------
+    // Spawn loop
+    // -----------------------
+    private IEnumerator SpawnRoutine()
+    {
+        // espera inicial aleatoria
+        yield return new WaitForSeconds(Random.Range(minSpawnTime, maxSpawnTime));
+
+        while (isSpawning)
+        {
+            if (frenzyMode)
+            {
+                // spawn continuo solo enemigos (usa pool)
+                SpawnEnemyFromPoolAtRandomPoint(HorseSkillEnemySpeed);
+                yield return new WaitForSeconds(frenzySpawnDelay);
+                continue;
+            }
+
+            // modo normal: patrones
+            yield return StartCoroutine(SpawnPattern());
+
+            float wait = patternInterval;
+            float elapsed = 0f;
+            while (elapsed < wait)
+            {
+                bonusTimer += Time.deltaTime;
+                if (bonusTimer >= bonusInterval)
+                {
+                    SpawnBonus();
+                    bonusTimer = 0f;
+                }
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+        }
     }
 
     private IEnumerator SpawnPattern()
     {
-        if (isSpawningPattern) yield break; // evitar solapamiento
+        if (isSpawningPattern) yield break;
         isSpawningPattern = true;
 
         if (enemyPrefabs.Count == 0 || spawnPoints.Length == 0)
@@ -156,7 +215,7 @@ public class EnemySpawner : MonoBehaviour
 
         int lineIndex = Random.Range(0, spawnPoints.Length);
         Transform spawnPoint = spawnPoints[lineIndex];
-        int count = IsHorseSkillActive ? 3 : Random.Range(2, 5); // 3 si habilidad activa, 2-4 normal
+        int count = Random.Range(2, 5);
         int prefabIndex = Random.Range(0, enemyPrefabs.Count);
         GameObject prefab = enemyPrefabs[prefabIndex];
         float stagger = 0.9f;
@@ -167,7 +226,7 @@ public class EnemySpawner : MonoBehaviour
             var runner = go != null ? go.GetComponent<RunnerEnemy>() : null;
             if (runner != null)
             {
-                runner.SetFallSpeed(IsHorseSkillActive ? HorseSkillEnemySpeed : NormalEnemySpeed);
+                runner.SetFallSpeed(NormalEnemySpeed);
             }
             yield return new WaitForSeconds(stagger);
         }
@@ -175,16 +234,9 @@ public class EnemySpawner : MonoBehaviour
         isSpawningPattern = false;
     }
 
-    private void SpawnBonus()
-    {
-        if (bonusPrefabs.Count == 0 || spawnPoints.Length == 0) return;
-        int prefabIndex = Random.Range(0, bonusPrefabs.Count);
-        GameObject prefab = bonusPrefabs[prefabIndex];
-        int pointIndex = Random.Range(0, spawnPoints.Length);
-        Transform spawnPoint = spawnPoints[pointIndex];
-        SpawnFromPool(prefab, spawnPoint.position, Quaternion.identity);
-    }
-
+    // -----------------------
+    // Spawn helpers (pool)
+    // -----------------------
     public GameObject SpawnFromPool(GameObject prefab, Vector3 position, Quaternion rotation)
     {
         var go = GetFromPool(prefab);
@@ -194,28 +246,34 @@ public class EnemySpawner : MonoBehaviour
         go.transform.SetParent(worldContainer);
         go.SetActive(true);
         var poolable = go.GetComponent<IPoolResettable>();
-        if (poolable != null)
-            poolable.OnSpawn();
+        poolable?.OnSpawn();
         return go;
     }
 
-    // Permite disparar un patron inmediatamente desde otros scripts (ej: al activar la skill)
-    public void SpawnImmediatePattern()
+    private void SpawnEnemyFromPoolAtRandomPoint(float speed)
     {
-        if (!isSpawning || isSpawningPattern) return;
-        StartCoroutine(SpawnPattern());
+        if (enemyPrefabs.Count == 0 || spawnPoints.Length == 0) return;
+        GameObject prefab = enemyPrefabs[Random.Range(0, enemyPrefabs.Count)];
+        Transform sp = spawnPoints[Random.Range(0, spawnPoints.Length)];
+        Vector3 pos = sp.position;
+        var go = SpawnFromPool(prefab, pos, Quaternion.identity);
+        var runner = go != null ? go.GetComponent<RunnerEnemy>() : null;
+        if (runner != null)
+            runner.SetFallSpeed(speed > 0f ? speed : NormalEnemySpeed);
     }
 
-    public void StopSpawning()
+    private void SpawnBonus()
     {
-        isSpawning = false;
-        if (spawnCoroutine != null)
-            StopCoroutine(spawnCoroutine);
-        StopAllCoroutines();
+        if (bonusPrefabs.Count == 0 || spawnPoints.Length == 0) return;
+        int prefabIndex = Random.Range(0, bonusPrefabs.Count);
+        int pointIndex = Random.Range(0, spawnPoints.Length);
+        Transform spawnPoint = spawnPoints[pointIndex];
+        SpawnFromPool(bonusPrefabs[prefabIndex], spawnPoint.position, Quaternion.identity);
     }
-}
 
-public interface IPoolResettable
-{
-    void OnSpawn();
+    public interface IPoolResettable
+    {
+        void OnSpawn();
+    }
+
 }

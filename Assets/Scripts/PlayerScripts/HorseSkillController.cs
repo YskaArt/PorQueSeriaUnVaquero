@@ -5,133 +5,128 @@ using UnityEngine.UI;
 public class HorseSkillController : MonoBehaviour
 {
     [Header("Duraciones")]
-    [SerializeField] private float skillDuration; // Duración de la habilidad del caballo
+    [SerializeField] private float skillDuration = 10f; // Duración de la habilidad del caballo
 
     [Header("UI")]
-    [SerializeField] private Button horseButton;       // Botón que activa la habilidad
-    [SerializeField] private Image cooldownImage;     // Imagen de cooldown que se llena/desocupa
+    [SerializeField] private Button horseButton;
+    [SerializeField] private Image cooldownImage;
 
-    [Header("Referencia al Player")]
-    [SerializeField] private Animator playerAnimator; // Animador del jugador (para animación Horse)
+    [Header("Player")]
+    [SerializeField] private Animator playerAnimator;
 
-    [Header("Enemigos")]
+    [Header("Referencias globales")]
     [SerializeField] private EnemySpawner enemySpawner;
-    [SerializeField] private float spawnMultiplier = 0.5f; // Modificador del spawn de enemigos durante la habilidad
-    [SerializeField] private float enemySpeedMultiplier = 3f; // Modificador de velocidad de enemigos durante la habilidad
+    [SerializeField] private TilemapScroller tilemapScroller;
 
-    [Header("Velocidad Afectada")]
-    [SerializeField] private InfiniteTilemapLoop tilemapMover;
-    [SerializeField] private float worldSpeedMultiplier = 3f; // Velocidad del scroll durante la habilidad
+    [Header("Multiplicadores")]
+    [SerializeField] private float enemySpeedMultiplier = 2f;
+    [SerializeField] private float worldSpeedMultiplier = 2f;
+    [SerializeField] private float frenzySpawnDelay = 0.12f; // spawn delay durante frenzy
 
-    private float originalScrollSpeed;
-    private float originalMinSpawn, originalMaxSpawn;
-    private float originalEnemyFallSpeed = 5f; // Valor por defecto, se ajusta en runtime
-    private bool originalHorseSkillActive = false; // Estado original de la habilidad del caballo
-    private float originalNormalEnemySpeed = 5f; // Velocidad original de los enemigos
+    // Valores originales (para restaurar)
+    private float originalScrollSpeed = 1f;
+    private float originalMinSpawn;
+    private float originalMaxSpawn;
+    private float originalNormalEnemySpeed;
 
     private Coroutine activeSkillCoroutine;
     private bool isSkillActive = false;
     private bool isMiniGameActive = false;
 
-    // MÉTODO: Start()
-    // Configura el botón, guarda valores originales y inicializa cooldown UI
     private void Start()
     {
-        horseButton.onClick.AddListener(ActivateHorse);
-        cooldownImage.fillAmount = 0f;
+        if (horseButton != null) horseButton.onClick.AddListener(ActivateHorse);
+        if (cooldownImage != null) cooldownImage.fillAmount = 0f;
 
-        originalScrollSpeed = tilemapMover.ScrollSpeed;
-        originalMinSpawn = enemySpawner.MinSpawnTime;
-        originalMaxSpawn = enemySpawner.MaxSpawnTime;
-        originalHorseSkillActive = enemySpawner.IsHorseSkillActive;
-        originalNormalEnemySpeed = enemySpawner.NormalEnemySpeed;
+        if (tilemapScroller != null) originalScrollSpeed = tilemapScroller.GetScrollSpeed();
 
-        // Detectar velocidad original de los enemigos activos (si hay alguno)
-        var enemies = FindObjectsOfType<RunnerEnemy>();
-        if (enemies.Length > 0)
-            originalEnemyFallSpeed = enemies[0].GetFallSpeed();
+        if (enemySpawner != null)
+        {
+            originalMinSpawn = enemySpawner.MinSpawnTime;
+            originalMaxSpawn = enemySpawner.MaxSpawnTime;
+            originalNormalEnemySpeed = enemySpawner.NormalEnemySpeed;
+        }
     }
 
-    // MÉTODO: Update()
-    // Actualiza el estado del botón y la imagen de cooldown cada frame
     private void Update()
     {
-        horseButton.interactable = HorseCooldownManager.Instance.IsReady() && !isMiniGameActive;
-        cooldownImage.fillAmount = HorseCooldownManager.Instance.GetCooldownProgress();
+        if (horseButton != null && HorseCooldownManager.Instance != null)
+            horseButton.interactable = HorseCooldownManager.Instance.IsReady() && !isMiniGameActive;
+
+        if (cooldownImage != null && HorseCooldownManager.Instance != null)
+            cooldownImage.fillAmount = HorseCooldownManager.Instance.GetCooldownProgress();
     }
 
-    // MÉTODO: ActivateHorse()
-    // Activa la habilidad del caballo:
-    // - Inicia cooldown
-    // - Aumenta velocidad del scroll
-    // - Reduce tiempos de spawn de enemigos
-    // - Activa animación del jugador
     private void ActivateHorse()
     {
-        if (!HorseCooldownManager.Instance.IsReady() || isMiniGameActive) return;
+        if (HorseCooldownManager.Instance == null) return;
+        if (!HorseCooldownManager.Instance.IsReady() || isMiniGameActive || isSkillActive) return;
 
         HorseCooldownManager.Instance.StartCooldown();
-        horseButton.interactable = false;
+        if (horseButton != null) horseButton.interactable = false;
 
         isSkillActive = true;
+        playerAnimator?.SetBool("Horse", true);
 
-        // Animación y velocidad
-        playerAnimator.SetBool("Horse", true);
-        tilemapMover.ScrollSpeed = originalScrollSpeed * worldSpeedMultiplier;
-        enemySpawner.MinSpawnTime = originalMinSpawn * spawnMultiplier;
-        enemySpawner.MaxSpawnTime = originalMaxSpawn * spawnMultiplier;
-        enemySpawner.IsHorseSkillActive = true;
-        enemySpawner.HorseSkillEnemySpeed = originalEnemyFallSpeed * enemySpeedMultiplier;
-        enemySpawner.NormalEnemySpeed = originalEnemyFallSpeed;
+        // Tilemap: acelerar
+        if (tilemapScroller != null)
+            tilemapScroller.SetScrollSpeed(originalScrollSpeed * worldSpeedMultiplier);
 
-        // Cambiar velocidad de todos los enemigos activos
-        var enemies = FindObjectsOfType<RunnerEnemy>();
-        foreach (var enemy in enemies)
+        // Spawner: activar frenzy mode (solo enemigos, spawn continuo)
+        if (enemySpawner != null)
         {
-            enemy.SetFallSpeed(originalEnemyFallSpeed * enemySpeedMultiplier);
+            // Ajustar spawn times opcional (si quieres reducir min/max)
+            enemySpawner.MinSpawnTime = originalMinSpawn * 0.5f;
+            enemySpawner.MaxSpawnTime = originalMaxSpawn * 0.5f;
+
+            enemySpawner.ActivateHorseMode(enemySpeedMultiplier, frenzySpawnDelay);
         }
 
-        // Spawn inmediato para evitar el intervalo inicial
-        enemySpawner.SpawnImmediatePattern();
+        // Hacer que TODOS los enemigos activos aumenten su velocidad
+        var enemies = FindObjectsByType<RunnerEnemy>(FindObjectsSortMode.None);
+        foreach (var e in enemies)
+        {
+            if (e != null)
+                e.SetFallSpeed((enemySpawner != null ? enemySpawner.HorseSkillEnemySpeed : e.GetFallSpeed() * enemySpeedMultiplier));
+        }
 
         activeSkillCoroutine = StartCoroutine(HorseDurationCoroutine());
     }
 
-    // COROUTINE: HorseDurationCoroutine()
-    // Espera la duración de la habilidad y luego termina el efecto
     private IEnumerator HorseDurationCoroutine()
     {
         yield return new WaitForSeconds(skillDuration);
         EndHorseSkill();
     }
 
-    // MÉTODO: EndHorseSkill()
-    // Restaura todos los valores originales y desactiva la animación
     private void EndHorseSkill()
     {
         if (!isSkillActive) return;
-
         isSkillActive = false;
 
-        tilemapMover.ScrollSpeed = originalScrollSpeed;
-        enemySpawner.MinSpawnTime = originalMinSpawn;
-        enemySpawner.MaxSpawnTime = originalMaxSpawn;
-        enemySpawner.IsHorseSkillActive = originalHorseSkillActive;
-        enemySpawner.HorseSkillEnemySpeed = originalEnemyFallSpeed * enemySpeedMultiplier;
-        enemySpawner.NormalEnemySpeed = originalNormalEnemySpeed;
+        playerAnimator?.SetBool("Horse", false);
 
-        // Restaurar velocidad de todos los enemigos activos
-        var enemies = FindObjectsOfType<RunnerEnemy>();
-        foreach (var enemy in enemies)
+        // Restaurar tilemap
+        if (tilemapScroller != null)
+            tilemapScroller.SetScrollSpeed(originalScrollSpeed);
+
+        // Restaurar spawner y valores
+        if (enemySpawner != null)
         {
-            enemy.SetFallSpeed(originalEnemyFallSpeed);
+            enemySpawner.DeactivateHorseMode();
+            enemySpawner.MinSpawnTime = originalMinSpawn;
+            enemySpawner.MaxSpawnTime = originalMaxSpawn;
         }
 
-        playerAnimator.SetBool("Horse", false);
+        // Restaurar velocidad de enemigos existentes
+        var enemies = FindObjectsByType<RunnerEnemy>(FindObjectsSortMode.None);
+        foreach (var e in enemies)
+        {
+            if (e != null)
+                e.SetFallSpeed(enemySpawner != null ? enemySpawner.NormalEnemySpeed : e.GetFallSpeed());
+        }
     }
 
-    // MÉTODO: ForceStopHorseSkill()
-    // Detiene la habilidad de forma inmediata (llamado desde MiniGameController)
     public void ForceStopHorseSkill()
     {
         if (activeSkillCoroutine != null)
@@ -142,16 +137,10 @@ public class HorseSkillController : MonoBehaviour
         EndHorseSkill();
     }
 
-    // MÉTODO: SetMiniGameActive(bool state)
-    // Notifica al HorseSkillController que se inició o terminó un minijuego
-    // Si inicia y la habilidad estaba activa, la detiene automáticamente
     public void SetMiniGameActive(bool state)
     {
         isMiniGameActive = state;
-
         if (isMiniGameActive && isSkillActive)
-        {
             ForceStopHorseSkill();
-        }
     }
 }
