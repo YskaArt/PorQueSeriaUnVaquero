@@ -2,17 +2,17 @@
 
 public class PlayerMovement : MonoBehaviour
 {
-    private Vector3[] lanes = new Vector3[3]; // Posiciones fijas de los carriles (izq, centro, der)
-    private int currentLane = 1; // Carril actual: 0=izquierda, 1=centro, 2=derecha
+    [SerializeField] private float laneChangeSpeed = 10f;
+    [SerializeField, Range(0.1f, 1f)] private float activeScreenWidth = 0.7f;
+    // Porción de la pantalla donde los toques cuentan para moverse (ej: 0.7 = 70% izquierda)
 
-    [SerializeField] private float laneChangeSpeed = 10f; // Velocidad de interpolación entre carriles
+    private Vector3[] lanes = new Vector3[3];
+    private int currentLane = 1;
 
     private Vector2 touchStart;
     private Vector2 touchEnd;
     private bool isSwiping = false;
 
-    // MÉTODO: Start()
-    // Define las posiciones X de los 3 carriles al inicio
     void Start()
     {
         lanes[0] = new Vector3(-3.45f, transform.position.y, transform.position.z); // Izquierda
@@ -20,62 +20,80 @@ public class PlayerMovement : MonoBehaviour
         lanes[2] = new Vector3(1.35f, transform.position.y, transform.position.z);  // Derecha
     }
 
-    // MÉTODO: Update()
-    // Maneja input táctil y movimiento suave entre carriles
     void Update()
     {
         HandleTouchInput();
 
-        // Movimiento suave hacia la posición X del carril actual
+        // Movimiento suave hacia el carril actual
         Vector3 targetPosition = new Vector3(lanes[currentLane].x, transform.position.y, transform.position.z);
         transform.position = Vector3.Lerp(transform.position, targetPosition, Time.deltaTime * laneChangeSpeed);
     }
 
-    // MÉTODO: HandleTouchInput()
-    // Detecta swipes horizontales para cambiar de carril
     void HandleTouchInput()
     {
-        if (Input.touchCount > 0)
+        if (Input.touchCount <= 0) return;
+
+        Touch touch = Input.GetTouch(0);
+
+        if (touch.phase == TouchPhase.Began)
         {
-            Touch touch = Input.GetTouch(0);
+            touchStart = touch.position;
+            isSwiping = true;
+        }
+        else if (touch.phase == TouchPhase.Ended && isSwiping)
+        {
+            touchEnd = touch.position;
+            Vector2 swipe = touchEnd - touchStart;
 
-            // Inicio del swipe
-            if (touch.phase == TouchPhase.Began)
+            // Detección de swipe horizontal
+            if (Mathf.Abs(swipe.x) > Mathf.Abs(swipe.y) && Mathf.Abs(swipe.x) > 50f)
             {
-                touchStart = touch.position;
-                isSwiping = true;
+                if (swipe.x > 0)
+                    MoveLane(1);
+                else
+                    MoveLane(-1);
+            }
+            else
+            {
+                // Si no fue un swipe, interpretamos como toque directo en pantalla
+                HandleTap(touchEnd);
             }
 
-            // Fin del swipe
-            else if (touch.phase == TouchPhase.Ended && isSwiping)
-            {
-                touchEnd = touch.position;
-                Vector2 swipe = touchEnd - touchStart;
-
-                // Detecta swipe horizontal significativo
-                if (Mathf.Abs(swipe.x) > Mathf.Abs(swipe.y) && Mathf.Abs(swipe.x) > 50f)
-                {
-                    if (swipe.x > 0)
-                        MoveLane(1); // Swipe derecha → carril derecho
-                    else
-                        MoveLane(-1); // Swipe izquierda → carril izquierdo
-                }
-
-                isSwiping = false;
-            }
+            isSwiping = false;
         }
     }
 
-    // MÉTODO: MoveLane(int direction)
-    // Cambia el carril actual en la dirección indicada y lo mantiene dentro de 0-2
+    void HandleTap(Vector2 tapPosition)
+    {
+        float screenWidth = Screen.width;
+        float validWidth = screenWidth * activeScreenWidth; // Solo el área izquierda cuenta
+        float rightMargin = screenWidth - validWidth;
+
+        // Si tocó dentro del área válida (izquierda)
+        if (tapPosition.x < validWidth)
+        {
+            float relativeX = tapPosition.x / validWidth; // Normalizamos dentro del área válida (0 a 1)
+
+            if (relativeX < 0.33f)
+                currentLane = 0; // Carril izquierdo
+            else if (relativeX < 0.66f)
+                currentLane = 1; // Carril central
+            else
+                currentLane = 2; // Carril derecho
+        }
+        else
+        {
+            // Ignorar toques sobre la parte derecha de la interfaz
+            Debug.Log("Toque en zona de interfaz (ignorado)");
+        }
+    }
+
     void MoveLane(int direction)
     {
         currentLane += direction;
         currentLane = Mathf.Clamp(currentLane, 0, 2);
     }
 
-    // MÉTODO: CenterToMiddleLane()
-    // Centra al jugador en el carril medio (usado, por ejemplo, al iniciar un minijuego)
     public void CenterToMiddleLane()
     {
         currentLane = 1;

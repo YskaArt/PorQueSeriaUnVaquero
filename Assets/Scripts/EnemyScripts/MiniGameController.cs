@@ -3,32 +3,26 @@
 public class MiniGameController : MonoBehaviour
 {
     [Header("Refs")]
-    [SerializeField] private InfiniteTilemapLoop tilemapScroller;
+    [SerializeField] private TilemapScroller tilemapScroller;
     [SerializeField] private GameObject specialEnemy;
     [SerializeField] private Transform enemyTargetPosition;
     [SerializeField] private PlayerShootController playerShooter;
     [SerializeField] private PlayerMovement playerMovement;
-    [SerializeField] private GameStartManager sceneManager;
     [SerializeField] private HorseSkillController horseSkill;
 
-    [Header("Escenas siguientes (elige una al azar)")]
-    [SerializeField] private string[] nextScenes;
-
-    // Asegura referencia a HorseSkillController si no fue asignada en Inspector
     private void Awake()
     {
         if (horseSkill == null)
             horseSkill = FindAnyObjectByType<HorseSkillController>();
     }
 
-    // Inicia el flujo del minijuego
     public void StartMiniGame()
     {
         if (horseSkill != null)
-            horseSkill.SetMiniGameActive(true);
+          //  horseSkill.SetMiniGameActive(true);
 
         if (tilemapScroller != null)
-            tilemapScroller.ScrollSpeed = 0f;
+           // tilemapScroller.ScrollSpeed = 0f;
 
         if (playerMovement != null)
             playerMovement.CenterToMiddleLane();
@@ -48,7 +42,6 @@ public class MiniGameController : MonoBehaviour
         }
     }
 
-    // Llamado cuando el miniboss muere
     public void OnEnemyDefeated()
     {
         if (playerShooter != null)
@@ -56,44 +49,29 @@ public class MiniGameController : MonoBehaviour
 
         if (playerShooter != null)
         {
-            // Animación de salida del jugador; al terminar ejecutamos transición
             playerShooter.MoveOut(() =>
             {
                 if (horseSkill != null)
-                    horseSkill.SetMiniGameActive(false);
+                   // horseSkill.SetMiniGameActive(false);
 
-                string targetScene = PickRandomNextScene();
-                if (!string.IsNullOrEmpty(targetScene) && sceneManager != null)
+                // AHORA: en lugar de cargar Scene - cambiar de level interno
+                if (GameManager.Instance != null)
                 {
-                    // ⚠️ Ya no mostramos anuncios aquí.
-                    // El intersticial se muestra dentro de GameStartManager.EndSceneAndLoadNext(),
-                    // después del fade a negro y antes de cargar la escena.
-                    sceneManager.EndSceneAndLoadNext(targetScene);
+                    GameManager.Instance.NextLevel();
                 }
                 else
                 {
-                    Debug.LogWarning("MiniGameController: No hay escenas en nextScenes o falta SceneManager.");
+                    Debug.LogWarning("MiniGameController: GameManager no encontrado, no se puede cambiar de level.");
                 }
             });
         }
         else
         {
             if (horseSkill != null)
-                horseSkill.SetMiniGameActive(false);
+               // horseSkill.SetMiniGameActive(false);
 
-            string targetScene = PickRandomNextScene();
-            if (!string.IsNullOrEmpty(targetScene) && sceneManager != null)
-                sceneManager.EndSceneAndLoadNext(targetScene);
+            if (GameManager.Instance != null)
+                GameManager.Instance.NextLevel();
         }
-    }
-
-    // Selecciona una escena aleatoria
-    private string PickRandomNextScene()
-    {
-        if (nextScenes == null || nextScenes.Length == 0)
-            return null;
-
-        int index = Random.Range(0, nextScenes.Length);
-        return nextScenes[index];
     }
 }

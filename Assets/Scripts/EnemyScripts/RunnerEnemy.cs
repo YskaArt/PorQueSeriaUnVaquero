@@ -1,4 +1,5 @@
 using UnityEngine;
+using static EnemySpawner;
 
 public class RunnerEnemy : MonoBehaviour, IPoolResettable
 {
@@ -71,4 +72,5 @@ public class RunnerEnemy : MonoBehaviour, IPoolResettable
     {
         return fallSpeed;
     }
+
 }
