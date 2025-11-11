@@ -68,26 +68,20 @@ public class HorseSkillController : MonoBehaviour
         isSkillActive = true;
         playerAnimator?.SetBool("Horse", true);
 
-        // Tilemap: acelerar
+        // Tilemap: acelerar inmediatamente
         if (tilemapScroller != null)
             tilemapScroller.SetScrollSpeed(originalScrollSpeed * worldSpeedMultiplier);
 
-        // Spawner: activar frenzy mode (solo enemigos, spawn continuo)
+        // Activar modo horse en el spawner (spawn continuo solo enemigos, comienzo inmediato)
         if (enemySpawner != null)
-        {
-            // Ajustar spawn times opcional (si quieres reducir min/max)
-            enemySpawner.MinSpawnTime = originalMinSpawn * 0.5f;
-            enemySpawner.MaxSpawnTime = originalMaxSpawn * 0.5f;
-
             enemySpawner.ActivateHorseMode(enemySpeedMultiplier, frenzySpawnDelay);
-        }
 
-        // Hacer que TODOS los enemigos activos aumenten su velocidad
+        // Aumentar velocidad de enemigos ya activos
         var enemies = FindObjectsByType<RunnerEnemy>(FindObjectsSortMode.None);
         foreach (var e in enemies)
         {
             if (e != null)
-                e.SetFallSpeed((enemySpawner != null ? enemySpawner.HorseSkillEnemySpeed : e.GetFallSpeed() * enemySpeedMultiplier));
+                e.SetFallSpeed(enemySpawner != null ? enemySpawner.HorseSkillEnemySpeed : e.GetFallSpeed() * enemySpeedMultiplier);
         }
 
         activeSkillCoroutine = StartCoroutine(HorseDurationCoroutine());
@@ -106,19 +100,15 @@ public class HorseSkillController : MonoBehaviour
 
         playerAnimator?.SetBool("Horse", false);
 
-        // Restaurar tilemap
+        // Restaurar tilemap velocidad
         if (tilemapScroller != null)
             tilemapScroller.SetScrollSpeed(originalScrollSpeed);
 
-        // Restaurar spawner y valores
+        // Desactivar frenzy en el spawner (vuelve al spawn normal)
         if (enemySpawner != null)
-        {
             enemySpawner.DeactivateHorseMode();
-            enemySpawner.MinSpawnTime = originalMinSpawn;
-            enemySpawner.MaxSpawnTime = originalMaxSpawn;
-        }
 
-        // Restaurar velocidad de enemigos existentes
+        // Restaurar velocidad de los enemigos existentes
         var enemies = FindObjectsByType<RunnerEnemy>(FindObjectsSortMode.None);
         foreach (var e in enemies)
         {
@@ -142,5 +132,24 @@ public class HorseSkillController : MonoBehaviour
         isMiniGameActive = state;
         if (isMiniGameActive && isSkillActive)
             ForceStopHorseSkill();
+    }
+
+    // Permite reasignar referencias cuando GameManager cambia de level
+    public void ReassignReferences(TilemapScroller newScroller, EnemySpawner newSpawner)
+    {
+        tilemapScroller = newScroller;
+        enemySpawner = newSpawner;
+
+        if (tilemapScroller != null)
+            originalScrollSpeed = tilemapScroller.GetScrollSpeed();
+
+        if (enemySpawner != null)
+        {
+            originalMinSpawn = enemySpawner.MinSpawnTime;
+            originalMaxSpawn = enemySpawner.MaxSpawnTime;
+            originalNormalEnemySpeed = enemySpawner.NormalEnemySpeed;
+        }
+
+        Debug.Log("[HorseSkill] Referencias reasignadas tras cambio de nivel.");
     }
 }

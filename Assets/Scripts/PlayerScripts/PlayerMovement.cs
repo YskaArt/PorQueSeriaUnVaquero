@@ -2,19 +2,26 @@
 
 public class PlayerMovement : MonoBehaviour
 {
-    [SerializeField] private float laneChangeSpeed = 10f;
-    [SerializeField, Range(0.1f, 1f)] private float activeScreenWidth = 0.7f;
-    // Porción de la pantalla donde los toques cuentan para moverse (ej: 0.7 = 70% izquierda)
+    private Vector3[] lanes = new Vector3[3]; // Posiciones fijas de los carriles (izq, centro, der)
+    private int currentLane = 1; // Carril actual: 0=izquierda, 1=centro, 2=derecha
 
-    private Vector3[] lanes = new Vector3[3];
-    private int currentLane = 1;
+    [SerializeField] private float laneChangeSpeed = 10f; // Velocidad de interpolación entre carriles
 
     private Vector2 touchStart;
     private Vector2 touchEnd;
     private bool isSwiping = false;
 
+    // Thresholds
+    private const float swipeThreshold = 50f; // px
+    private const float tapMaxDistance = 20f; // px (si no es swipe, se considera tap)
+
+    // Cámara principal cacheada
+    private Camera mainCam;
+
     void Start()
     {
+        mainCam = Camera.main;
+
         lanes[0] = new Vector3(-3.45f, transform.position.y, transform.position.z); // Izquierda
         lanes[1] = new Vector3(-1.1f, transform.position.y, transform.position.z);  // Centro
         lanes[2] = new Vector3(1.35f, transform.position.y, transform.position.z);  // Derecha
@@ -24,68 +31,105 @@ public class PlayerMovement : MonoBehaviour
     {
         HandleTouchInput();
 
-        // Movimiento suave hacia el carril actual
+        // Movimiento suave hacia la posición X del carril actual
         Vector3 targetPosition = new Vector3(lanes[currentLane].x, transform.position.y, transform.position.z);
         transform.position = Vector3.Lerp(transform.position, targetPosition, Time.deltaTime * laneChangeSpeed);
     }
 
     void HandleTouchInput()
     {
-        if (Input.touchCount <= 0) return;
-
-        Touch touch = Input.GetTouch(0);
-
-        if (touch.phase == TouchPhase.Began)
+        if (Input.touchCount > 0)
         {
-            touchStart = touch.position;
-            isSwiping = true;
-        }
-        else if (touch.phase == TouchPhase.Ended && isSwiping)
-        {
-            touchEnd = touch.position;
-            Vector2 swipe = touchEnd - touchStart;
+            Touch touch = Input.GetTouch(0);
 
-            // Detección de swipe horizontal
-            if (Mathf.Abs(swipe.x) > Mathf.Abs(swipe.y) && Mathf.Abs(swipe.x) > 50f)
+            if (touch.phase == TouchPhase.Began)
             {
-                if (swipe.x > 0)
-                    MoveLane(1);
+                touchStart = touch.position;
+                isSwiping = true;
+            }
+            else if ((touch.phase == TouchPhase.Moved || touch.phase == TouchPhase.Stationary) && isSwiping)
+            {
+                // opcional: podrías mostrar swipe visual
+            }
+            else if (touch.phase == TouchPhase.Ended && isSwiping)
+            {
+                touchEnd = touch.position;
+                Vector2 delta = touchEnd - touchStart;
+
+                // Si hay un swipe horizontal grande -> cambia de carril
+                if (Mathf.Abs(delta.x) > Mathf.Abs(delta.y) && Mathf.Abs(delta.x) > swipeThreshold)
+                {
+                    if (delta.x > 0)
+                        MoveLane(1); // swipe a la derecha
+                    else
+                        MoveLane(-1); // swipe a la izquierda
+                }
                 else
-                    MoveLane(-1);
+                {
+                    // Si no fue swipe, tratar como tap: seleccionar carril más cercano a la X tocada
+                    if (Vector2.Distance(touchEnd, touchStart) <= tapMaxDistance)
+                    {
+                        TryMoveToNearestLane(touchEnd);
+                    }
+                    else
+                    {
+                        // Si fue un movimiento pequeño diagonal, también mapear a la posición
+                        TryMoveToNearestLane(touchEnd);
+                    }
+                }
+
+                isSwiping = false;
             }
-            else
-            {
-                // Si no fue un swipe, interpretamos como toque directo en pantalla
-                HandleTap(touchEnd);
-            }
-
-            isSwiping = false;
-        }
-    }
-
-    void HandleTap(Vector2 tapPosition)
-    {
-        float screenWidth = Screen.width;
-        float validWidth = screenWidth * activeScreenWidth; // Solo el área izquierda cuenta
-        float rightMargin = screenWidth - validWidth;
-
-        // Si tocó dentro del área válida (izquierda)
-        if (tapPosition.x < validWidth)
-        {
-            float relativeX = tapPosition.x / validWidth; // Normalizamos dentro del área válida (0 a 1)
-
-            if (relativeX < 0.33f)
-                currentLane = 0; // Carril izquierdo
-            else if (relativeX < 0.66f)
-                currentLane = 1; // Carril central
-            else
-                currentLane = 2; // Carril derecho
         }
         else
         {
-            // Ignorar toques sobre la parte derecha de la interfaz
-            Debug.Log("Toque en zona de interfaz (ignorado)");
+            // Soporte para click del editor (opcional)
+            if (Input.GetMouseButtonDown(0))
+            {
+                Vector2 mousePos = Input.mousePosition;
+                touchStart = mousePos;
+                isSwiping = true;
+            }
+            else if (Input.GetMouseButtonUp(0) && isSwiping)
+            {
+                Vector2 mousePos = Input.mousePosition;
+                touchEnd = mousePos;
+                Vector2 delta = touchEnd - touchStart;
+
+                if (Mathf.Abs(delta.x) > Mathf.Abs(delta.y) && Mathf.Abs(delta.x) > swipeThreshold)
+                {
+                    if (delta.x > 0) MoveLane(1); else MoveLane(-1);
+                }
+                else
+                {
+                    TryMoveToNearestLane(mousePos);
+                }
+
+                isSwiping = false;
+            }
         }
+    }
+
+    private void TryMoveToNearestLane(Vector2 screenPos)
+    {
+        if (mainCam == null) mainCam = Camera.main;
+        // Convertir posición de las 3 lanes a pantalla y elegir la más cercana en X
+        float bestDist = float.MaxValue;
+        int bestLane = currentLane;
+
+        for (int i = 0; i < lanes.Length; i++)
+        {
+            Vector3 laneWorld = lanes[i];
+            Vector3 laneScreen = mainCam.WorldToScreenPoint(laneWorld);
+            float dist = Mathf.Abs(screenPos.x - laneScreen.x);
+            if (dist < bestDist)
+            {
+                bestDist = dist;
+                bestLane = i;
+            }
+        }
+
+        currentLane = bestLane;
     }
 
     void MoveLane(int direction)

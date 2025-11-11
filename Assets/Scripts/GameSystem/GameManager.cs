@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -12,7 +12,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private Image fadeImage;
     [SerializeField] private float fadeDuration = 1.0f;
 
-    [Header("Levels (configuraci�n de la escena)")]
+    [Header("Levels (configuración de la escena)")]
     [SerializeField] private List<LevelData> levels = new List<LevelData>();
     [SerializeField] private int startLevelIndex = 0;
 
@@ -42,38 +42,14 @@ public class GameManager : MonoBehaviour
         StartCoroutine(InitializeGame());
     }
 
-    /// <summary>
-    /// Secuencia inicial: fade desde negro + aplicar primer nivel.
-    /// </summary>
     private IEnumerator InitializeGame()
     {
-        // Cargar primer nivel mientras pantalla negra
         ApplyLevel(currentLevelIndex);
-
-        // Esperar un frame para asegurar que el Tilemap se haya activado
         yield return null;
-
-        // Fade-in
-        if (fadeImage != null)
-        {
-            float t = 0f;
-            while (t < fadeDuration)
-            {
-                fadeImage.color = Color.Lerp(Color.black, Color.clear, t / fadeDuration);
-                t += Time.deltaTime;
-                yield return null;
-            }
-            fadeImage.color = Color.clear;
-            fadeImage.gameObject.SetActive(false);
-        }
-
-        Debug.Log($"[GameManager] Juego iniciado en nivel: {currentLevel?.levelName ?? currentLevelIndex.ToString()}");
+        yield return FadeIn();
     }
 
-    /// <summary>
-    /// Activa el level indicado por �ndice y desactiva los dem�s.
-    /// Tambi�n actualiza el EnemySpawner y resetea tilemap si corresponde.
-    /// </summary>
+    // ================== APLICAR NIVEL ==================
     public void ApplyLevel(int index)
     {
         if (levels == null || levels.Count == 0)
@@ -85,43 +61,45 @@ public class GameManager : MonoBehaviour
         index = Mathf.Clamp(index, 0, levels.Count - 1);
         currentLevelIndex = index;
 
-        // Desactivar todos los levelRoots y tilemaps
+        // Desactiva todos los roots de nivel
         foreach (var lvl in levels)
             lvl?.SetActive(false);
 
-        // Activar solo el requerido
+        // Activa solo el requerido
         currentLevel = levels[currentLevelIndex];
         currentLevel?.SetActive(true);
 
-        // Configurar tilemap (resetear y ajustar velocidad)
-        if (currentLevel != null && currentLevel.tilemapLoop != null)
-        {
-           // currentLevel.tilemapLoop.enabled = true;
-           // currentLevel.tilemapLoop.ScrollSpeed = currentLevel.scrollSpeed;
-            //currentLevel.tilemapLoop.ResetTilemap();
+        // Buscar scroll activo del nuevo nivel (si existe)
+        var activeScroller = FindAnyObjectByType<TilemapScroller>();
 
-        }
-
-        // Actualizar spawner (detener, asignar pool y reiniciar)
-        var spawner = FindFirstObjectByType<EnemySpawner>();
+        // Actualizar Spawner: detener, reasignar pools (no arrancar aquí necesariamente)
+        var spawner = FindAnyObjectByType<EnemySpawner>();
         if (spawner != null)
         {
             spawner.StopSpawning();
             spawner.SetEnemyPool(currentLevel != null ? currentLevel.enemyPrefabs : null);
-            spawner.RestartSpawning();
         }
+
+        // Reasignar referencias dinámicas (horse, minigame, etc)
+        ReassignDynamicReferences(activeScroller, spawner);
 
         Debug.Log($"[GameManager] Nivel aplicado: {currentLevel?.levelName ?? currentLevelIndex.ToString()}");
     }
 
-    /// <summary>
-    /// Cambia al siguiente nivel (con fade). Cicla si llega al final.
-    /// </summary>
-    public void NextLevel()
+    private void ReassignDynamicReferences(TilemapScroller newScroller, EnemySpawner newSpawner)
     {
-        StartCoroutine(ChangeLevelRoutine((currentLevelIndex + 1) % Mathf.Max(1, levels.Count)));
+        // Horse skill
+        var horse = FindAnyObjectByType<HorseSkillController>();
+        if (horse != null)
+            horse.ReassignReferences(newScroller, newSpawner);
+
+        // MiniGame
+        var miniGame = FindAnyObjectByType<MiniGameController>();
+        if (miniGame != null)
+            miniGame.ReassignReferences(newScroller, newSpawner);
     }
 
+    // ================== CAMBIO DE NIVEL (con intersticial) ==================
     public void GotoLevel(int index)
     {
         StartCoroutine(ChangeLevelRoutine(Mathf.Clamp(index, 0, Mathf.Max(0, levels.Count - 1))));
@@ -129,45 +107,120 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator ChangeLevelRoutine(int nextIndex)
     {
-        // Fade out
-        if (fadeImage != null)
-        {
-            fadeImage.gameObject.SetActive(true);
-            float t = 0f;
-            while (t < fadeDuration)
-            {
-                fadeImage.color = Color.Lerp(Color.clear, Color.black, t / fadeDuration);
-                t += Time.deltaTime;
-                yield return null;
-            }
-            fadeImage.color = Color.black;
-        }
+        // 1) Detener sistemas actuales para evitar elementos activos durante fade
+        var currentScroller = FindAnyObjectByType<TilemapScroller>();
+        var currentSpawner = FindAnyObjectByType<EnemySpawner>();
+        var currentMini = FindAnyObjectByType<MiniGameController>();
 
-        // Guardar progreso si corresponde
-        GameSaveManager.Instance?.SaveGame();
+        if (currentScroller != null)
+            currentScroller.SetScrollSpeed(0f);
 
-        // Aplicar siguiente nivel
+        if (currentSpawner != null)
+            currentSpawner.StopSpawning();
+
+        if (currentMini != null)
+            currentMini.StopMiniGame(); // asegúrate de implementar StopMiniGame() (ver nota abajo)
+
+        // 2) Fade Out (deja la pantalla NEGRA; no la desactives)
+        yield return FadeOut();
+
+        // 3) APLICAR nivel mientras la pantalla está negra (carga de Data Level)
         ApplyLevel(nextIndex);
-
-        // Esperar un frame para asegurar activaci�n
+        // Esperar un frame para que todo tenga chance de inicializarse
         yield return null;
 
-        // Fade in
-        if (fadeImage != null)
+        // 4) Mostrar intersticial y esperar a que termine (si AdsManager existe)
+        if (AdsManager.Instance != null)
         {
-            float t = 0f;
-            while (t < fadeDuration)
-            {
-                fadeImage.color = Color.Lerp(Color.black, Color.clear, t / fadeDuration);
-                t += Time.deltaTime;
-                yield return null;
-            }
-            fadeImage.color = Color.clear;
-            fadeImage.gameObject.SetActive(false);
+            // ShowInterstitial devuelve IEnumerator (espera dentro de AdsManager)
+            yield return AdsManager.Instance.ShowInterstitial();
+        }
+        else
+        {
+            Debug.LogWarning("[GameManager] AdsManager no presente - no se mostrará intersticial.");
         }
 
-        yield break;
+        // 5) Restaurar / arrancar sistemas del nuevo nivel
+        var newScroller = FindAnyObjectByType<TilemapScroller>();
+        var newSpawner = FindAnyObjectByType<EnemySpawner>();
+        var newMini = FindAnyObjectByType<MiniGameController>();
+
+        if (newScroller != null)
+            newScroller.RestoreOriginalSpeed();
+        else
+            Debug.LogWarning("[GameManager] No hay TilemapScroller activo al restaurar.");
+
+        if (newSpawner != null)
+            newSpawner.RestartSpawning();
+        else
+            Debug.LogWarning("[GameManager] No hay EnemySpawner activo al restaurar.");
+
+        // 6) Fade In (la pantalla deja de estar negra)
+        yield return FadeIn();
+
+        // 7) Reiniciar cuenta atrás del minigame
+        if (newMini != null)
+            newMini.StartMiniGameCountdown();
     }
 
-    public LevelData GetCurrentLevelData() => currentLevel;
+    // ================== SIGUIENTE NIVEL ==================
+    public void NextLevel()
+    {
+        // Calcula el siguiente índice (si llega al final, vuelve al inicio)
+        int nextIndex = currentLevelIndex + 1;
+        if (nextIndex >= levels.Count)
+            nextIndex = 0;
+
+        Debug.Log($"[GameManager] Avanzando al siguiente nivel: {nextIndex}");
+
+        // Usa la misma rutina de cambio con fade + intersticial
+        GotoLevel(nextIndex);
+    }
+
+
+
+    // ================== FADE ==================
+    public IEnumerator FadeOut()
+    {
+        if (fadeImage == null) yield break;
+        fadeImage.gameObject.SetActive(true);
+
+        float t = 0f;
+        while (t < fadeDuration)
+        {
+            fadeImage.color = Color.Lerp(Color.clear, Color.black, t / fadeDuration);
+            t += Time.deltaTime;
+            yield return null;
+        }
+        fadeImage.color = Color.black;
+    }
+
+    public IEnumerator FadeIn()
+    {
+        if (fadeImage == null) yield break;
+        float t = 0f;
+        while (t < fadeDuration)
+        {
+            fadeImage.color = Color.Lerp(Color.black, Color.clear, t / fadeDuration);
+            t += Time.deltaTime;
+            yield return null;
+        }
+        fadeImage.color = Color.clear;
+        fadeImage.gameObject.SetActive(false);
+    }
+
+    // ================== UTIL ==================
+    public int GetCurrentLevelIndex() => currentLevelIndex;
+    public int GetTotalLevels() => levels.Count;
+
+    public int GetRandomDifferentLevelIndex()
+    {
+        if (levels.Count <= 1) return currentLevelIndex;
+        int newIndex;
+        do
+        {
+            newIndex = Random.Range(0, levels.Count);
+        } while (newIndex == currentLevelIndex);
+        return newIndex;
+    }
 }

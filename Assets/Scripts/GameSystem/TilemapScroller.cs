@@ -71,20 +71,32 @@ public class TilemapScroller : MonoBehaviour
         float direction = scrollDown ? 1f : -1f;
         float newY = reference.transform.localPosition.y + direction * mapHeightInTiles * tileHeight;
         toMove.transform.localPosition = new Vector3(0, newY, 0);
-
-        // Podés agregar aquí un método para cambiar los tiles si querés variación visual:
-        // RandomizeTiles(toMove);
+        // Podés agregar aquí un método para cambiar los tiles si querés variación visual
     }
-   
 
-    public float GetScrollSpeed()
+    // === MÉTODOS EXISTENTES ===
+    public float GetScrollSpeed() => scrollSpeed;
+    public void SetScrollSpeed(float newSpeed) => scrollSpeed = newSpeed;
+
+    // === Guardar / Restaurar velocidad ===
+    private float savedScrollSpeed = float.NaN;
+
+    public void SaveOriginalSpeed()
     {
-        return scrollSpeed;
+        if (float.IsNaN(savedScrollSpeed))
+            savedScrollSpeed = scrollSpeed;
     }
 
-    public void SetScrollSpeed(float newSpeed)
+    public void RestoreOriginalSpeed()
     {
-        scrollSpeed = newSpeed;
+        if (!float.IsNaN(savedScrollSpeed))
+        {
+            scrollSpeed = savedScrollSpeed;
+            savedScrollSpeed = float.NaN;
+        }
+        else
+        {
+            Debug.LogWarning("[TilemapScroller] RestoreOriginalSpeed() llamado sin una velocidad guardada.");
+        }
     }
-
 }

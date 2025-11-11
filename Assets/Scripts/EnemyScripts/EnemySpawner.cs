@@ -41,11 +41,18 @@ public class EnemySpawner : MonoBehaviour
     public float MinSpawnTime { get => minSpawnTime; set => minSpawnTime = value; }
     public float MaxSpawnTime { get => maxSpawnTime; set => maxSpawnTime = value; }
 
+    // Nueva propiedad pública para consultar si está spawneando
+    public bool IsSpawning => isSpawning;
+
     private void Awake()
     {
         if (worldContainer == null) worldContainer = this.transform;
-        
+
+        // Asegurar pool para bonuses y para enemigos iniciales (si los hubiere)
         foreach (var prefab in bonusPrefabs)
+            EnsurePoolFor(prefab);
+
+        foreach (var prefab in enemyPrefabs)
             EnsurePoolFor(prefab);
     }
 
@@ -123,11 +130,11 @@ public class EnemySpawner : MonoBehaviour
     /// </summary>
     public void SetEnemyPool(List<GameObject> newEnemies)
     {
-        // Mantener pools de bonus, eliminar pools de enemigos previos
+        // Mantener pools de bonus, eliminar pools de enemigos previos que no estén en newEnemies
         var toRemove = new List<GameObject>();
         foreach (var kv in pools)
         {
-            if (!bonusPrefabs.Contains(kv.Key))
+            if (!bonusPrefabs.Contains(kv.Key) && (newEnemies == null || !newEnemies.Contains(kv.Key)))
                 toRemove.Add(kv.Key);
         }
         foreach (var k in toRemove)
@@ -146,23 +153,54 @@ public class EnemySpawner : MonoBehaviour
     // -----------------------
     // Horse / Frenzy mode
     // -----------------------
-    /// <summary>
-    /// Entra en modo frenesí: spawn continuo SOLO enemigos y a la velocidad indicada.
-    /// </summary>
-    /// <param name="enemySpeedMultiplier">multiplica NormalEnemySpeed para new enemies</param>
-    /// <param name="spawnDelay">delay entre spawns en frenzy (ej: 0.12f)</param>
     public void ActivateHorseMode(float enemySpeedMultiplier = 2f, float spawnDelay = 0.12f)
     {
+        if (frenzyMode) return;
+
         frenzyMode = true;
         HorseSkillEnemySpeed = NormalEnemySpeed * Mathf.Max(1f, enemySpeedMultiplier);
         frenzySpawnDelay = Mathf.Max(0.02f, spawnDelay);
+
         Debug.Log("[EnemySpawner] HorseMode ACTIVATED");
+
+        // Reiniciar el spawn inmediatamente (sin esperar)
+        if (spawnCoroutine != null)
+        {
+            StopCoroutine(spawnCoroutine);
+            spawnCoroutine = null;
+        }
+        if (isSpawning)
+            spawnCoroutine = StartCoroutine(FrenzySpawnRoutine());
     }
 
     public void DeactivateHorseMode()
     {
+        if (!frenzyMode) return;
+
         frenzyMode = false;
         Debug.Log("[EnemySpawner] HorseMode DEACTIVATED");
+
+        // Volver al modo normal de spawn
+        if (spawnCoroutine != null)
+        {
+            StopCoroutine(spawnCoroutine);
+            spawnCoroutine = null;
+        }
+        if (isSpawning)
+            spawnCoroutine = StartCoroutine(SpawnRoutine());
+    }
+
+    private IEnumerator FrenzySpawnRoutine()
+    {
+        // spawnear inmediatamente al entrar
+        SpawnEnemyFromPoolAtRandomPoint(HorseSkillEnemySpeed);
+
+        // spawn continuo solo enemigos
+        while (frenzyMode && isSpawning)
+        {
+            yield return new WaitForSeconds(frenzySpawnDelay);
+            SpawnEnemyFromPoolAtRandomPoint(HorseSkillEnemySpeed);
+        }
     }
 
     // -----------------------
@@ -275,5 +313,4 @@ public class EnemySpawner : MonoBehaviour
     {
         void OnSpawn();
     }
-
 }
