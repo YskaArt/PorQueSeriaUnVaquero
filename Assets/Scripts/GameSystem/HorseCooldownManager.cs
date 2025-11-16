@@ -1,78 +1,66 @@
 using UnityEngine;
 
+/// <summary>
+/// Gestiona un cooldown global para el sistema del caballo mediante un Singleton.
+/// Lleva el tiempo restante, avanza el cooldown cada frame y expone métodos para
+/// consultar su estado, reiniciarlo, modificarlo (al cargar partida) y obtener
+/// datos útiles para la UI como el progreso y el tiempo restante.
+/// </summary>
 public class HorseCooldownManager : MonoBehaviour
 {
-    // Instancia única para el patrón Singleton.
     public static HorseCooldownManager Instance;
 
-    // Duración total del cooldown (en segundos).
     [SerializeField] private float cooldownDuration = 180f;
 
-    // Tiempo restante del cooldown.
     private float currentCooldown = 0f;
 
-    // MÉTODO: Awake()
-    // Configura el patrón Singleton. 
-    // Asegura que solo exista una instancia y se mantenga entre escenas.
     private void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject); // Persiste entre cargas de escena.
+            DontDestroyOnLoad(gameObject);
         }
         else
         {
-            Destroy(gameObject); // Si ya existe, destruye el duplicado.
+            Destroy(gameObject);
         }
     }
 
-    // MÉTODO: Update()
-    // Reduce el contador del cooldown en cada frame hasta llegar a 0.
     private void Update()
     {
         if (currentCooldown > 0f)
         {
-            currentCooldown -= Time.deltaTime; // Resta tiempo real.
-            if (currentCooldown < 0f) currentCooldown = 0f; // Evita números negativos.
+            currentCooldown -= Time.deltaTime;
+            if (currentCooldown < 0f) currentCooldown = 0f;
         }
     }
 
-    // MÉTODO: IsReady()
-    // Devuelve true si el cooldown terminó (está listo para usar).
     public bool IsReady()
     {
         return currentCooldown <= 0f;
     }
 
-    // MÉTODO: StartCooldown()
-    // Reinicia el contador, comenzando un nuevo cooldown completo.
     public void StartCooldown()
     {
         currentCooldown = cooldownDuration;
     }
 
-    // MÉTODO: GetCooldownProgress()
-    // Retorna el progreso del cooldown (1 = en cooldown, 0 = listo).
-    // Útil para llenar una barra de progreso en UI.
     public float GetCooldownProgress()
     {
         return currentCooldown / cooldownDuration;
     }
 
-    // Nuevo: Obtener tiempo restante de cooldown en segundos
     public float GetRemainingCooldown()
     {
         return Mathf.Max(currentCooldown, 0f);
     }
 
-    // Nuevo: Establecer tiempo restante de cooldown (usado al cargar partida)
     public void SetRemainingCooldown(float seconds)
     {
         currentCooldown = Mathf.Clamp(seconds, 0f, cooldownDuration);
     }
 
-    // Nuevo: Obtener la duración total del cooldown
     public float GetCooldownDuration()
     {
         return cooldownDuration;

@@ -1,4 +1,36 @@
-﻿using System.Collections;
+﻿/*
+    MiniGameController
+    ------------------
+    Controla toda la lógica del Minigame que ocurre cada cierto tiempo durante la partida.
+    Sus responsabilidades incluyen:
+
+    • Temporizador del minigame:
+        - Espera un tiempo configurado.
+        - 10 segundos antes, desactiva el spawner.
+        - Al finalizar la cuenta, inicia el minijuego.
+
+    • Inicio del Minigame:
+        - Pausa el scroll del Tilemap.
+        - Detiene la habilidad del caballo.
+        - Bloquea el movimiento del jugador y lo centra en el carril del medio.
+        - Detiene el spawner y el disparo del jugador.
+        - Instancia un MiniBoss, lo mueve a su posición de pelea y luego habilita el disparo.
+
+    • Manejo de la muerte del MiniBoss:
+        - Evita doble ejecución usando un flag.
+        - Limpia callbacks, elimina el boss y detiene el disparo.
+        - Dispara la rutina que finaliza el minigame y pide al GameManager avanzar de nivel.
+
+    • Fin del Minigame:
+        - Libera bloqueo del jugador.
+        - Restaura velocidades y sistemas del Tilemap.
+        - Reinicia el spawner.
+        - Señaliza al HorseSkill que el minigame terminó.
+
+    • Soporta reasignación de referencias desde el GameManager.
+*/
+
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -14,23 +46,21 @@ public class MiniGameController : MonoBehaviour
     [Header("Boss y posiciones")]
     [SerializeField] private Transform bossStartPosition;
     [SerializeField] private Transform bossTargetPosition;
-    [SerializeField] private List<GameObject> bossPrefabs; // prefabs que contienen MiniBossController
+    [SerializeField] private List<GameObject> bossPrefabs;
+
     private GameObject activeBoss;
     private MiniBossController activeBossController;
 
     [Header("Minigame config")]
-    [SerializeField] private float minigameDelay = 240f; // 4 minutos
-    [SerializeField] private float preDisableTime = 10f; // 10s antes del minigame se apaga el spawner
+    [SerializeField] private float minigameDelay = 240f;
+    [SerializeField] private float preDisableTime = 10f;
 
     private Coroutine minigameTimerCoroutine;
     private bool isMiniGameActive = false;
-
-    // --- Flags para evitar ejecuciones dobles ---
     private bool hasHandledBossDeath = false;
 
     private void Start()
     {
-        // buscar referencias si faltan
         if (tilemapScroller == null) tilemapScroller = FindAnyObjectByType<TilemapScroller>();
         if (horseSkill == null) horseSkill = FindAnyObjectByType<HorseSkillController>();
         if (enemySpawner == null) enemySpawner = FindAnyObjectByType<EnemySpawner>();
@@ -40,24 +70,26 @@ public class MiniGameController : MonoBehaviour
         StartMiniGameCountdown();
     }
 
-    // ---------------------------------------------------------------------
-    // Temporizador / control
-    // ---------------------------------------------------------------------
+    // Temporizador principal del minigame
     public void StartMiniGameCountdown()
     {
-        if (minigameTimerCoroutine != null) StopCoroutine(minigameTimerCoroutine);
+        if (minigameTimerCoroutine != null)
+            StopCoroutine(minigameTimerCoroutine);
+
         minigameTimerCoroutine = StartCoroutine(MinigameCountdown());
     }
 
     private IEnumerator MinigameCountdown()
     {
         float remaining = minigameDelay;
+
         while (remaining > 0f)
         {
             remaining -= Time.deltaTime;
 
-            // 10 segundos antes del minigame, desactivar spawner
-            if (remaining <= preDisableTime && enemySpawner != null && enemySpawner.IsSpawning)
+            if (remaining <= preDisableTime &&
+                enemySpawner != null &&
+                enemySpawner.IsSpawning)
             {
                 Debug.Log("[MiniGame] Desactivando spawner previo al minigame...");
                 enemySpawner.StopSpawning();
@@ -69,9 +101,7 @@ public class MiniGameController : MonoBehaviour
         StartMiniGame();
     }
 
-    // ---------------------------------------------------------------------
-    // INICIO DEL MINIGAME
-    // ---------------------------------------------------------------------
+    // Inicio del minigame
     public void StartMiniGame()
     {
         if (isMiniGameActive) return;
@@ -80,37 +110,30 @@ public class MiniGameController : MonoBehaviour
 
         Debug.Log("[MiniGame] Iniciando minigame...");
 
-        // Pausar scroll
-        if (tilemapScroller != null)
-        {
-            tilemapScroller.SaveOriginalSpeed();
-            tilemapScroller.SetScrollSpeed(0f);
-        }
-        else Debug.LogWarning("[MiniGame] No hay TilemapScroller activo.");
+        tilemapScroller?.SaveOriginalSpeed();
+        tilemapScroller?.SetScrollSpeed(0f);
 
-        // Forzar stop de horse skill
         horseSkill?.ForceStopHorseSkill();
         horseSkill?.SetMiniGameActive(true);
 
-        // Detener spawner
         enemySpawner?.StopSpawning();
 
-        // Centrar jugador
+        playerMovement?.SetLockedForMiniGame(true);
         playerMovement?.CenterToMiddleLane();
 
-        // Instanciar boss (desde la lista) y asignar callback
         if (bossPrefabs != null && bossPrefabs.Count > 0 && bossStartPosition != null)
         {
             int bossIndex = Random.Range(0, bossPrefabs.Count);
-            activeBoss = Instantiate(bossPrefabs[bossIndex], bossStartPosition.position, Quaternion.identity);
+            activeBoss = Instantiate(bossPrefabs[bossIndex],
+                                     bossStartPosition.position,
+                                     Quaternion.identity);
 
             activeBossController = activeBoss.GetComponent<MiniBossController>();
+
             if (activeBossController != null)
             {
-                // Reemplaza cualquier callback anterior
                 activeBossController.AssignDeathCallback(OnMiniBossDefeated);
 
-                // Mover al boss hacia la posición objetivo; cuando llegue, comenzar la pelea
                 activeBossController.MoveTo(bossTargetPosition.position, () =>
                 {
                     playerShooter?.StartShooting();
@@ -127,72 +150,16 @@ public class MiniGameController : MonoBehaviour
         }
     }
 
-    // ---------------------------------------------------------------------
-    // HANDLER de muerte del miniboss (seguro para ejecuciones múltiples)
-    // ---------------------------------------------------------------------
+    // Handler de muerte del miniboss
     public void OnMiniBossDefeated()
     {
-        if (hasHandledBossDeath) return; // evita ejecuciones duplicadas
+        if (hasHandledBossDeath) return;
         hasHandledBossDeath = true;
 
-        Debug.Log("[MiniGame] Boss derrotado. Iniciando cierre y cambio de nivel...");
+        Debug.Log("[MiniGame] Boss derrotado. Cerrando minigame...");
 
-        // Detener shooter por seguridad
-        playerShooter?.StopShooting();
+        activeBossController?.ClearDeathCallback();
 
-        // Lanzar la secuencia de fin de minigame (coroutine)
-        StartCoroutine(HandleEndOfMinigame());
-    }
-
-    // ---------------------------------------------------------------------
-    // Final del minigame: restauración y cambio de nivel
-    // ---------------------------------------------------------------------
-    private IEnumerator HandleEndOfMinigame()
-    {
-        // Dejar el game manager manejar fade, carga y cambio
-        // Llamamos a GameManager para que haga FadeOut -> ApplyLevel -> ShowAds -> FadeIn (ya implementado ahí)
-        if (GameManager.Instance != null)
-        {
-            // GameManager se encargará de detener/arrancar sistemas. Llamamos a su GotoLevel ó NextLevel
-            GameManager.Instance.NextLevel();
-        }
-        else
-        {
-            Debug.LogWarning("[MiniGame] GameManager no encontrado. No se puede cambiar de nivel automáticamente.");
-        }
-
-        yield break;
-    }
-
-    // ---------------------------------------------------------------------
-    // STOP MINIGAME (llamable desde GameManager si se necesita limpiar rápido)
-    // ---------------------------------------------------------------------
-    public void StopMiniGame()
-    {
-        if (!isMiniGameActive) return;
-        isMiniGameActive = false;
-
-        // Detener timer
-        if (minigameTimerCoroutine != null) StopCoroutine(minigameTimerCoroutine);
-        minigameTimerCoroutine = null;
-
-        // Parar shooter
-        playerShooter?.StopShooting();
-
-        // Restaurar tilemap si estaba pausado
-        if (tilemapScroller != null) tilemapScroller.RestoreOriginalSpeed();
-
-        // Reactivar spawner
-        enemySpawner?.RestartSpawning();
-
-        // Forzar parar la habilidad del caballo
-        horseSkill?.SetMiniGameActive(false);
-
-        // Limpiar boss existente si lo hay
-        if (activeBossController != null)
-        {
-            activeBossController.ClearDeathCallback();
-        }
         if (activeBoss != null)
         {
             Destroy(activeBoss);
@@ -200,10 +167,48 @@ public class MiniGameController : MonoBehaviour
             activeBossController = null;
         }
 
+        playerShooter?.StopShooting();
+
+        StartCoroutine(HandleEndOfMinigame());
+    }
+
+    private IEnumerator HandleEndOfMinigame()
+    {
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.NextLevel();
+        }
+        else
+        {
+            Debug.LogWarning("[MiniGame] GameManager no encontrado. No se puede cambiar de nivel.");
+        }
+
+        yield break;
+    }
+
+    // Llamado para cancelar un minigame en curso o limpiar el estado
+    public void StopMiniGame()
+    {
+        if (!isMiniGameActive) return;
+        isMiniGameActive = false;
+
+        if (minigameTimerCoroutine != null)
+            StopCoroutine(minigameTimerCoroutine);
+
+        minigameTimerCoroutine = null;
+
+        playerShooter?.StopShooting();
+        playerMovement?.SetLockedForMiniGame(false);
+
+        tilemapScroller?.RestoreOriginalSpeed();
+        enemySpawner?.RestartSpawning();
+
+        horseSkill?.SetMiniGameActive(false);
+
         hasHandledBossDeath = false;
     }
 
-    // Reassignment helper requested por GameManager
+    // Reasignación de referencias desde GameManager
     public void ReassignReferences(TilemapScroller newScroller, EnemySpawner newSpawner)
     {
         tilemapScroller = newScroller;

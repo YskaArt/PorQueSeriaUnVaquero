@@ -1,0 +1,49 @@
+/*
+ * EnemyGoldUpgradeUI
+ * -------------------
+ * UI específica del upgrade que aumenta el oro otorgado por enemigos.
+ *
+ * FUNCIONAMIENTO:
+ * - Hereda de UpgradeUIBase<EnemyGoldUpgradeData>, por lo que utiliza su sistema
+ *   de selección de cantidad, cálculo de costos y actualización visual.
+ *
+ * - OnLevelBought():
+ *      * Se llama cuando el jugador compra niveles del upgrade.
+ *      * Notifica a EnemyGoldManager para que recalcule inmediatamente la
+ *        recompensa de oro por enemigo.
+ *
+ * - BuildDisplayStrings():
+ *      * Construye los textos dinámicos del panel:
+ *          - levelStr: muestra el nivel actual y una estimación del reward por enemigo.
+ *          - priceStr: muestra cuántos niveles se comprarán y el costo total.
+ *      * La recompensa estimada se toma desde EnemyGoldManager para coincidir
+ *        con la lógica real que usa todo el sistema.
+ *
+ * RESPONSABILIDAD:
+ * - Solo controla la visualización y actualización UI del upgrade.
+ * - No maneja cálculos internos de oro ni niveles (eso es responsabilidad del SO
+ *   EnemyGoldUpgradeData y del sistema de upgrades base).
+ */
+
+using TMPro;
+using UnityEngine;
+
+public class EnemyGoldUpgradeUI : UpgradeUIBase<EnemyGoldUpgradeData>
+{
+    protected override void OnLevelBought()
+    {
+        // Notify manager to re-evaluate reward
+        EnemyGoldManager.Instance?.OnEnemyUpgradeChanged();
+    }
+
+    protected override void BuildDisplayStrings(out string levelStr, out string priceStr)
+    {
+        double sampleReward = EnemyGoldManager.Instance != null ?
+                              EnemyGoldManager.Instance.GetEnemyGoldReward() : upgradeData.CalculateEnemyReward(0.0);
+        levelStr = $"Lv. {upgradeData.currentLevel}\n<color=#888>Reward ~ {GoldManager.FormatNumber(sampleReward)}</color>";
+
+        int displayQty = (selectedQuantity < 0) ? GetMaxAffordableLevels() : selectedQuantity;
+        double total = GetTotalCostForQuantity(displayQty);
+        priceStr = $"Buy {displayQty}\n{GoldManager.FormatNumber(total)}";
+    }
+}

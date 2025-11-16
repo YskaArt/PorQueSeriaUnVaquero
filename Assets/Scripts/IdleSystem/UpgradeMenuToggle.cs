@@ -1,36 +1,29 @@
+/*
+ * UpgradeMenuToggle
+ * ------------------
+ * Componente simple que permite refrescar un grupo específico de UIs de mejoras.
+ *
+ * FUNCIONAMIENTO:
+ * - Este script hereda de UIControllerBase (clase común para controladores UI).
+ * - Guarda una lista de UpgradeUIBaseCommon[] llamada "upgrades".
+ * - Cuando se llama a RefreshUI(), recorre todas las UIs y fuerza que cada una
+ *   actualice sus textos, costos y estado.
+ *
+ * USO TÍPICO:
+ * - Vinculado a un panel que no controla el menú entero, pero sí un subconjunto
+ *   de mejoras que deben refrescarse al abrirse o al recibir algún evento.
+ */
+
 using UnityEngine;
-using UnityEngine.UI;
 
-public class UpgradeMenuToggle : MonoBehaviour
+public class UpgradeMenuToggle : UIControllerBase
 {
-    [SerializeField] private GameObject upgradeMenuPanel; // Panel que contiene todos los upgrades
-    [SerializeField] private Button toggleButton;         // Botón para abrir/cerrar el panel
-    [SerializeField] private Upgrade[] upgrades;          // Lista de upgrades a mostrar en la UI
+    [SerializeField] private UpgradeUIBaseCommon[] upgrades;
 
-    // MÉTODO: Start()
-    // Inicializa el botón para abrir/cerrar el panel y lo oculta al inicio
-    private void Start()
-    {
-        toggleButton.onClick.AddListener(ToggleMenu);
-        upgradeMenuPanel.SetActive(false);
-    }
-
-    // MÉTODO: ToggleMenu()
-    // Alterna la visibilidad del panel de upgrades
-    private void ToggleMenu()
-    {
-        upgradeMenuPanel.SetActive(!upgradeMenuPanel.activeSelf);
-    }
-
-    // MÉTODO: RefreshUI()
-    // Actualiza todos los elementos del panel de upgrades
-    // Llama a ForceUpdateUI() de cada Upgrade para reflejar cambios en nivel o costo
     public void RefreshUI()
     {
-        foreach (var upgrade in upgrades)
-        {
-            if (upgrade != null)
-                upgrade.ForceUpdateUI();
-        }
+        if (upgrades == null) return;
+        foreach (var u in upgrades)
+            u?.ForceUpdateUI();
     }
 }

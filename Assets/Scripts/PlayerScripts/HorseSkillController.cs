@@ -1,11 +1,36 @@
-﻿using System.Collections;
+﻿/*
+    HorseSkillController
+    --------------------
+    Controla completamente la habilidad del Caballo ("Horse Skill"), que acelera el
+    desplazamiento del mundo, incrementa la velocidad de los enemigos y activa un modo
+    de "frenesí" en el EnemySpawner.
+
+    FUNCIONALIDADES PRINCIPALES:
+    • Activa la habilidad al presionar el botón correspondiente (si el cooldown lo permite).
+    • Modifica varios sistemas globales mientras dura la habilidad:
+        - Aumenta la velocidad del TilemapScroller (mundo).
+        - Cambia EnemySpawner a HorseMode (spawn rápido y enemigos acelerados).
+        - Acelera enemigos ya existentes en escena.
+        - Activa animación "Horse" en el jugador.
+    • Administra duración, cooldown y finalización de la habilidad.
+    • Se desactiva automáticamente si se inicia un Minigame.
+    • Permite reasignar TilemapScroller y EnemySpawner cuando GameManager cambia de Level.
+
+    NOTAS:
+    • Al terminar la habilidad, restaura todos los valores originales.
+    • HorseCooldownManager gestiona el cooldown y estado de disponibilidad.
+    • El método ReassignReferences es importante para niveles que regeneran sistemas.
+    • La habilidad NO debe funcionar durante minijuegos (se fuerza apagado).
+*/
+
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class HorseSkillController : MonoBehaviour
 {
     [Header("Duraciones")]
-    [SerializeField] private float skillDuration = 10f; // Duración de la habilidad del caballo
+    [SerializeField] private float skillDuration = 10f;
 
     [Header("UI")]
     [SerializeField] private Button horseButton;
@@ -21,9 +46,8 @@ public class HorseSkillController : MonoBehaviour
     [Header("Multiplicadores")]
     [SerializeField] private float enemySpeedMultiplier = 2f;
     [SerializeField] private float worldSpeedMultiplier = 2f;
-    [SerializeField] private float frenzySpawnDelay = 0.12f; // spawn delay durante frenzy
+    [SerializeField] private float frenzySpawnDelay = 0.12f;
 
-    // Valores originales (para restaurar)
     private float originalScrollSpeed = 1f;
     private float originalMinSpawn;
     private float originalMaxSpawn;
@@ -35,10 +59,14 @@ public class HorseSkillController : MonoBehaviour
 
     private void Start()
     {
-        if (horseButton != null) horseButton.onClick.AddListener(ActivateHorse);
-        if (cooldownImage != null) cooldownImage.fillAmount = 0f;
+        if (horseButton != null)
+            horseButton.onClick.AddListener(ActivateHorse);
 
-        if (tilemapScroller != null) originalScrollSpeed = tilemapScroller.GetScrollSpeed();
+        if (cooldownImage != null)
+            cooldownImage.fillAmount = 0f;
+
+        if (tilemapScroller != null)
+            originalScrollSpeed = tilemapScroller.GetScrollSpeed();
 
         if (enemySpawner != null)
         {
@@ -63,26 +91,22 @@ public class HorseSkillController : MonoBehaviour
         if (!HorseCooldownManager.Instance.IsReady() || isMiniGameActive || isSkillActive) return;
 
         HorseCooldownManager.Instance.StartCooldown();
-        if (horseButton != null) horseButton.interactable = false;
+
+        if (horseButton != null)
+            horseButton.interactable = false;
 
         isSkillActive = true;
         playerAnimator?.SetBool("Horse", true);
 
-        // Tilemap: acelerar inmediatamente
         if (tilemapScroller != null)
             tilemapScroller.SetScrollSpeed(originalScrollSpeed * worldSpeedMultiplier);
 
-        // Activar modo horse en el spawner (spawn continuo solo enemigos, comienzo inmediato)
         if (enemySpawner != null)
             enemySpawner.ActivateHorseMode(enemySpeedMultiplier, frenzySpawnDelay);
 
-        // Aumentar velocidad de enemigos ya activos
         var enemies = FindObjectsByType<RunnerEnemy>(FindObjectsSortMode.None);
         foreach (var e in enemies)
-        {
-            if (e != null)
-                e.SetFallSpeed(enemySpawner != null ? enemySpawner.HorseSkillEnemySpeed : e.GetFallSpeed() * enemySpeedMultiplier);
-        }
+            e?.SetFallSpeed(enemySpawner != null ? enemySpawner.HorseSkillEnemySpeed : e.GetFallSpeed() * enemySpeedMultiplier);
 
         activeSkillCoroutine = StartCoroutine(HorseDurationCoroutine());
     }
@@ -96,25 +120,19 @@ public class HorseSkillController : MonoBehaviour
     private void EndHorseSkill()
     {
         if (!isSkillActive) return;
-        isSkillActive = false;
 
+        isSkillActive = false;
         playerAnimator?.SetBool("Horse", false);
 
-        // Restaurar tilemap velocidad
         if (tilemapScroller != null)
             tilemapScroller.SetScrollSpeed(originalScrollSpeed);
 
-        // Desactivar frenzy en el spawner (vuelve al spawn normal)
         if (enemySpawner != null)
             enemySpawner.DeactivateHorseMode();
 
-        // Restaurar velocidad de los enemigos existentes
         var enemies = FindObjectsByType<RunnerEnemy>(FindObjectsSortMode.None);
         foreach (var e in enemies)
-        {
-            if (e != null)
-                e.SetFallSpeed(enemySpawner != null ? enemySpawner.NormalEnemySpeed : e.GetFallSpeed());
-        }
+            e?.SetFallSpeed(enemySpawner != null ? enemySpawner.NormalEnemySpeed : e.GetFallSpeed());
     }
 
     public void ForceStopHorseSkill()
@@ -124,17 +142,18 @@ public class HorseSkillController : MonoBehaviour
             StopCoroutine(activeSkillCoroutine);
             activeSkillCoroutine = null;
         }
+
         EndHorseSkill();
     }
 
     public void SetMiniGameActive(bool state)
     {
         isMiniGameActive = state;
+
         if (isMiniGameActive && isSkillActive)
             ForceStopHorseSkill();
     }
 
-    // Permite reasignar referencias cuando GameManager cambia de level
     public void ReassignReferences(TilemapScroller newScroller, EnemySpawner newSpawner)
     {
         tilemapScroller = newScroller;

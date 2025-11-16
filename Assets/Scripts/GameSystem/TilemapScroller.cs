@@ -2,26 +2,34 @@
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
+/// <summary>
+/// Sistema de scroll infinito para Tilemaps.
+/// Utiliza dos Tilemaps idénticos posicionados uno encima del otro. 
+/// A medida que ambos se desplazan, cuando uno sale completamente del área visible 
+/// se reposiciona arriba/abajo para simular un fondo continuo.
+/// También permite modificar y guardar/restaurar la velocidad del scroll.
+/// </summary>
 [RequireComponent(typeof(TilemapRenderer))]
 public class TilemapScroller : MonoBehaviour
 {
     [Header("Tilemaps")]
-    [SerializeField] private Tilemap tilemapA;  // Primer Tilemap
-    [SerializeField] private Tilemap tilemapB;  // Segundo Tilemap (duplicado del primero)
-    [SerializeField] private Grid grid;          // Referencia al Grid padre (opcional)
+    [SerializeField] private Tilemap tilemapA;
+    [SerializeField] private Tilemap tilemapB;
+    [SerializeField] private Grid grid;
 
     [Header("Configuración del mapa (en celdas)")]
     [SerializeField] private int mapWidthInTiles = 10;
     [SerializeField] private int mapHeightInTiles = 15;
 
     [Header("Velocidad del desplazamiento")]
-    [SerializeField] private float scrollSpeed = 2f; // tiles por segundo
+    [SerializeField] private float scrollSpeed = 2f; // tiles/segundo
 
     [Header("Parámetros opcionales")]
-    [SerializeField] private bool scrollDown = true; // true = jugador sube
+    [SerializeField] private bool scrollDown = true;
 
     private float tileHeight;
     private float scrollOffset = 0f;
+
     private Tilemap activeMap;
     private Tilemap hiddenMap;
 
@@ -32,7 +40,7 @@ public class TilemapScroller : MonoBehaviour
 
         tileHeight = grid.cellSize.y * tilemapA.transform.lossyScale.y;
 
-        // Posicionamos los tilemaps uno encima del otro
+        // Coloca ambos tilemaps uno encima del otro
         tilemapA.transform.localPosition = Vector3.zero;
         tilemapB.transform.localPosition = new Vector3(0, mapHeightInTiles * tileHeight, 0);
 
@@ -45,11 +53,11 @@ public class TilemapScroller : MonoBehaviour
         float delta = scrollSpeed * tileHeight * Time.deltaTime;
         scrollOffset += delta * (scrollDown ? -1f : 1f);
 
-        // Mueve ambos tilemaps
+        // Mueve ambos tilemaps según la dirección configurada
         tilemapA.transform.localPosition += Vector3.down * (scrollDown ? delta : -delta);
         tilemapB.transform.localPosition += Vector3.down * (scrollDown ? delta : -delta);
 
-        // Cuando uno se sale completamente de pantalla, lo reposicionamos arriba
+        // Reposiciona tilemaps cuando salen del área visible
         if (scrollDown)
         {
             if (tilemapA.transform.localPosition.y <= -mapHeightInTiles * tileHeight)
@@ -66,19 +74,22 @@ public class TilemapScroller : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Reposiciona el Tilemap que salió de pantalla por encima del otro 
+    /// para mantener el bucle infinito.
+    ///</summary>
     private void RecycleTilemap(Tilemap toMove, Tilemap reference)
     {
         float direction = scrollDown ? 1f : -1f;
         float newY = reference.transform.localPosition.y + direction * mapHeightInTiles * tileHeight;
         toMove.transform.localPosition = new Vector3(0, newY, 0);
-        // Podés agregar aquí un método para cambiar los tiles si querés variación visual
     }
 
-    // === MÉTODOS EXISTENTES ===
+    // === Getters / Setters de velocidad ===
     public float GetScrollSpeed() => scrollSpeed;
     public void SetScrollSpeed(float newSpeed) => scrollSpeed = newSpeed;
 
-    // === Guardar / Restaurar velocidad ===
+    // === Guardar / Restaurar velocidad original ===
     private float savedScrollSpeed = float.NaN;
 
     public void SaveOriginalSpeed()
@@ -96,7 +107,7 @@ public class TilemapScroller : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("[TilemapScroller] RestoreOriginalSpeed() llamado sin una velocidad guardada.");
+            Debug.LogWarning("[TilemapScroller] RestoreOriginalSpeed() llamado sin velocidad guardada.");
         }
     }
 }

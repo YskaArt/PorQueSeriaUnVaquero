@@ -2,11 +2,17 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using GoogleMobileAds.Api;
 
+/// <summary>
+/// Controlador del menú principal. Inicializa los anuncios, muestra un banner,
+/// y carga la última escena jugada (o una escena por defecto) al detectar input.
+/// También permite iniciar escenas manualmente u ocultar/cerrar el juego.
+/// </summary>
 public class MainMenuController : MonoBehaviour
 {
     private const string BANNER_ID = "ca-app-pub-8408315673471628/8656782151";
     private BannerView bannerView;
-    [SerializeField] private string defaultScene = "Desert";
+
+    [SerializeField] private string defaultScene = "GameScene";
 
     private void Start()
     {
@@ -30,9 +36,7 @@ public class MainMenuController : MonoBehaviour
         string lastScene = null;
 
         if (GameSaveManager.Instance != null)
-        {
             lastScene = GameSaveManager.Instance.GetLastScene();
-        }
 
         string sceneToLoad = !string.IsNullOrEmpty(lastScene) ? lastScene : defaultScene;
         SceneManager.LoadScene(sceneToLoad);
@@ -57,6 +61,7 @@ public class MainMenuController : MonoBehaviour
         }
 
         Debug.Log("[MainMenuController] Mostrando Banner.");
+
         try
         {
             bannerView = new BannerView(BANNER_ID, AdSize.Banner, AdPosition.Bottom);

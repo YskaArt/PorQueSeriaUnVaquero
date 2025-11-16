@@ -1,89 +1,152 @@
-﻿using UnityEngine;
+﻿/*
+ * UpgradeUIManager
+ * ----------------
+ * Manager responsable de:
+ *
+ *   ✔ Mostrar / ocultar cada panel de upgrade según el progreso del jugador.
+ *   ✔ Actualizar dinámicamente la UI cuando cambian el oro o los niveles de cualquier upgrade.
+ *   ✔ Suscribirse y desuscribirse automáticamente a los eventos de cada UpgradeBase.
+ *
+ * Funcionamiento:
+ * ---------------
+ * - En el inspector se asignan:
+ *       upgradeUIComponents → scripts concretos de cada upgrade (UI lógica)
+ *       upgradeVisuals      → los GameObjects visuales (paneles)
+ *
+ * - En OnEnable se suscribe a:
+ *       GoldManager.OnGoldChanged  → refresca todos los upgrades
+ *       UpgradeBase.OnLevelChanged → refresca cuando un upgrade sube de nivel
+ *
+ * - RefreshUI controla dos cosas:
+ *       1. Actualiza la visibilidad del panel (reveal/hide).
+ *       2. Llama a ForceUpdateUI() para refrescar datos internos.
+ *
+ * Reglas de visibilidad:
+ * ----------------------
+ *  - El primer upgrade siempre se muestra.
+ *  - Los siguientes aparecen si:
+ *         • La mejora anterior tiene nivel >= 1
+ *         • O el jugador tiene suficiente oro (>= 50% del costo del upgrade actual)
+ *
+ * Esto permite un sistema escalable donde las mejoras se desbloquean gradualmente
+ * sin necesidad de lógica especial por upgrade.
+ */
+
+using UnityEngine;
+using System.Collections.Generic;
 
 public class UpgradeUIManager : MonoBehaviour
 {
-    [SerializeField] private Upgrade[] upgrades; // Referencias a los objetos Upgrade en el Canvas
-    [SerializeField] private GameObject[] upgradeVisuals; // Visuales completas de cada mejora (paneles/contenedores)
-    private bool[] hasBeenRevealed; // Flags para saber si la mejora ya fue revelada
+    [Tooltip("Assign the UI components (scripts) here: GPSUpgradeUI, EnemyGoldUpgradeUI, etc.")]
+    [SerializeField] private UpgradeUIBaseCommon[] upgradeUIComponents;
+
+    [SerializeField] private GameObject[] upgradeVisuals;
+
+    private bool[] hasBeenRevealed;
+
+    // Para limpiar eventos fácilmente
+    private readonly List<UpgradeBase> subscribedUpgrades = new List<UpgradeBase>();
 
     private void Awake()
     {
-        // Inicializar el array de flags al tamaño de upgrades
-        hasBeenRevealed = new bool[upgrades != null ? upgrades.Length : 0];
+        int len = upgradeUIComponents != null ? upgradeUIComponents.Length : 0;
+        hasBeenRevealed = new bool[len];
     }
 
     private void OnEnable()
     {
+        if (GoldManager.Instance != null)
+            GoldManager.Instance.OnGoldChanged += RefreshUI;
+
+        SubscribeToUpgradeEvents();
         RefreshUI();
+    }
+
+    private void OnDisable()
+    {
+        if (GoldManager.Instance != null)
+            GoldManager.Instance.OnGoldChanged -= RefreshUI;
+
+        UnsubscribeFromUpgradeEvents();
+    }
+
+    private void SubscribeToUpgradeEvents()
+    {
+        UnsubscribeFromUpgradeEvents();
+        subscribedUpgrades.Clear();
+
+        if (upgradeUIComponents == null) return;
+
+        foreach (var uiComp in upgradeUIComponents)
+        {
+            if (uiComp == null) continue;
+
+            var data = uiComp.GetUpgradeData();
+            if (data == null) continue;
+
+            data.OnLevelChanged += RefreshUI;
+            subscribedUpgrades.Add(data);
+        }
+    }
+
+    private void UnsubscribeFromUpgradeEvents()
+    {
+        foreach (var up in subscribedUpgrades)
+        {
+            if (up != null)
+                up.OnLevelChanged -= RefreshUI;
+        }
+
+        subscribedUpgrades.Clear();
     }
 
     public void RefreshUI()
     {
-        if (GoldManager.Instance == null || upgrades == null || upgradeVisuals == null) return;
-        if (hasBeenRevealed == null || hasBeenRevealed.Length != upgrades.Length)
-            hasBeenRevealed = new bool[upgrades.Length];
+        if (GoldManager.Instance == null ||
+            upgradeUIComponents == null ||
+            upgradeVisuals == null) return;
 
-        double currentGold = GoldManager.Instance.CurrentGold;
+        double gold = GoldManager.Instance.CurrentGold;
 
-        for (int i = 0; i < upgrades.Length; i++)
+        for (int i = 0; i < upgradeUIComponents.Length; i++)
         {
-            Upgrade upgrade = upgrades[i];
-            GameObject visual = (i < upgradeVisuals.Length) ? upgradeVisuals[i] : null;
-            if (upgrade == null || visual == null)
-                continue;
+            UpgradeUIBaseCommon ui = upgradeUIComponents[i];
+            GameObject visual = upgradeVisuals[i];
 
-            UpgradeData data = upgrade.GetUpgradeData();
+            if (ui == null || visual == null) continue;
+
+            UpgradeBase data = ui.GetUpgradeData();
             if (data == null)
             {
                 visual.SetActive(false);
                 continue;
             }
 
-            bool canShow = false;
+            bool show = false;
 
-            // Si ya fue revelada, siempre visible
-            if (hasBeenRevealed[i])
+            // Primera mejora → siempre visible
+            if (i == 0)
             {
-                canShow = true;
-            }
-            // Si ya tiene al menos 1 nivel, siempre visible y marcar como revelada
-            else if (data.currentLevel > 0)
-            {
-                canShow = true;
-                hasBeenRevealed[i] = true;
+                show = true;
             }
             else
             {
-                // 1️⃣ Si no es la primera mejora, verificar que la anterior tenga nivel >= 3
-                if (i > 0)
-                {
-                    Upgrade previousUpgrade = upgrades[i - 1];
-                    if (previousUpgrade == null || previousUpgrade.GetUpgradeData().currentLevel < 3)
-                        canShow = false;
-                    else
-                        canShow = true;
-                }
-                else
-                {
-                    canShow = true; // La primera mejora siempre puede mostrarse si cumple oro
-                }
+                UpgradeBase prevUpgrade = upgradeUIComponents[i - 1].GetUpgradeData();
 
-                // 2️⃣ Verificar si tiene al menos la mitad del oro necesario
-                double nextCost = data.GetCost();
-                if (currentGold < nextCost / 2.0)
-                    canShow = false;
-
-                // Si se va a mostrar por primera vez, marcar como revelada
-                if (canShow)
-                    hasBeenRevealed[i] = true;
+                if (prevUpgrade.currentLevel >= 1)
+                {
+                    show = true;
+                }
+                else if (gold >= data.GetCost() * 0.5)
+                {
+                    show = true;
+                }
             }
 
-            // Mostrar/ocultar el panel visual completo
-            visual.SetActive(canShow);
+            visual.SetActive(show);
 
-            // Refrescar datos si está visible
-            if (canShow)
-                upgrade.ForceUpdateUI();
+            if (show)
+                ui.ForceUpdateUI();
         }
     }
 }

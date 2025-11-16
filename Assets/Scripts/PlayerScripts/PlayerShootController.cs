@@ -1,17 +1,35 @@
+/*
+    PlayerShootController
+    ---------------------
+    Controla toda la lógica de disparo del jugador durante el minijuego del MiniBoss.
+
+    FUNCIONALIDADES PRINCIPALES:
+    • Activa y detiene la animación de disparo.
+    • Cambia la velocidad de la animación según el input del jugador:
+        - Velocidad normal mientras dispara.
+        - Velocidad rápida cuando se mantiene el dedo en la pantalla (solo móviles).
+    • Recibe un evento de animación ("OnShootHit") para aplicar daño al MiniBoss.
+    • Permite desplazar al jugador hacia arriba (fuera de la pantalla) al finalizar el minijuego.
+      Esto se hace mediante una coroutine con un callback (Action) que se ejecuta al terminar.
+
+    NOTAS:
+    • Está pensado para usarse solo dentro del minijuego del MiniBoss.
+    • Usa FindFirstObjectByType para obtener el MiniBossController en cada impacto, lo cual
+      funciona pero puede optimizarse cacheando la referencia (cuando quieras mejorar rendimiento).
+*/
+
 using UnityEngine;
 using System;
 using System.Collections;
 
 public class PlayerShootController : MonoBehaviour
 {
-    [SerializeField] private Animator anim;           // Animador del jugador
-    [SerializeField] private float shootSpeedNormal = 1f; // Velocidad normal de animación de disparo
-    [SerializeField] private float shootSpeedFast = 2f;   // Velocidad rápida (cuando se toca la pantalla)
+    [SerializeField] private Animator anim;
+    [SerializeField] private float shootSpeedNormal = 1f;
+    [SerializeField] private float shootSpeedFast = 2f;
 
-    private bool isShooting = false;                  // Indica si el jugador está disparando
+    private bool isShooting = false;
 
-    // MÉTODO: StartShooting()
-    // Activa la animación de disparo y ajusta la velocidad normal
     public void StartShooting()
     {
         isShooting = true;
@@ -19,8 +37,6 @@ public class PlayerShootController : MonoBehaviour
         anim.speed = shootSpeedNormal;
     }
 
-    // MÉTODO: StopShooting()
-    // Detiene el disparo y vuelve a animación de correr
     public void StopShooting()
     {
         isShooting = false;
@@ -28,8 +44,6 @@ public class PlayerShootController : MonoBehaviour
         anim.Play("Run");
     }
 
-    // MÉTODO: Update()
-    // Detecta input táctil para acelerar la animación de disparo en móviles
     void Update()
     {
 #if UNITY_ANDROID || UNITY_IOS
@@ -40,22 +54,18 @@ public class PlayerShootController : MonoBehaviour
 #endif
     }
 
-    // MÉTODO: OnShootHit()
-    // Llamado desde un evento de animación; inflige daño al MiniBoss
+    // Llamado desde un evento de animación
     public void OnShootHit()
     {
         FindFirstObjectByType<MiniBossController>().TakeDamage();
     }
 
-    // MÉTODO: MoveOut(Action onComplete)
-    // Mueve al jugador hacia arriba fuera de la pantalla tras terminar el minijuego
+    // Mueve al jugador fuera de la pantalla al terminar el minijuego
     public void MoveOut(Action onComplete)
     {
         StartCoroutine(MoveUpAndExit(onComplete));
     }
 
-    // COROUTINE: MoveUpAndExit(Action onComplete)
-    // Lerp simple para mover al jugador hacia arriba durante 1.5s y llamar callback
     private IEnumerator MoveUpAndExit(Action onComplete)
     {
         float duration = 1.5f;

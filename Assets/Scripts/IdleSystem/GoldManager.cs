@@ -1,3 +1,37 @@
+/*
+ * GoldManager
+ * -----------
+ * Sistema central de administración del oro en el juego.
+ *
+ * FUNCIONAMIENTO GENERAL:
+ * - Singleton persistente entre escenas (DontDestroyOnLoad).
+ * - Maneja el oro total (gold) y el oro pasivo por segundo (goldPerSecond).
+ * - Incrementa el oro progresivamente usando Time.deltaTime.
+ * - Notifica cambios mediante el evento OnGoldChanged, para que otros sistemas
+ *   (upgrades, recompensas, managers) reaccionen cuando el oro o el GPS cambian.
+ *
+ * UI:
+ * - Actualiza el texto de oro y GPS con un intervalo fijo (uiUpdateInterval)
+ *   para evitar refrescar la UI cada frame.
+ * - Si las referencias de UI no existen al cargar una escena, intenta reasignarlas
+ *   automáticamente mediante búsqueda por tag o por nombre.
+ *
+ * MÉTODOS PRINCIPALES:
+ * - AddGold(amount): suma oro instantáneo (ej: enemigos muertos).
+ * - SpendGold(amount): resta oro si hay suficiente; devuelve true/false.
+ * - AddGoldPerSecond(amount): incrementa la ganancia pasiva.
+ * - SetGoldPerSecond(value): asigna nuevo GPS directo.
+ * - FormatNumber(number): compacta números grandes (K, M, B, etc.).
+ *
+ * PERSISTENCIA Y ESCENAS:
+ * - Usa SceneManager.sceneLoaded para restaurar referencias al cambiar de escena.
+ * - Colabora con GameSaveManager para aplicar datos previamente cargados.
+ *
+ * RESPONSABILIDAD ÚNICA:
+ * - Este manager es la autoridad del oro y del GPS en todo el juego.
+ * - Ningún otro sistema debería modificar el oro directamente.
+ */
+
 using System;
 using TMPro;
 using UnityEngine;
@@ -5,39 +39,22 @@ using UnityEngine.SceneManagement;
 
 public class GoldManager : MonoBehaviour
 {
-    // ==========================
-    // SINGLETON
-    // ==========================
     public static GoldManager Instance { get; private set; }
 
-    // ==========================
-    // EVENTOS
-    // ==========================
     public event Action OnGoldChanged;
 
-    // ==========================
-    // REFERENCIAS DE UI
-    // ==========================
-    [SerializeField] private TextMeshProUGUI goldText;          // Texto que muestra el oro total
-    [SerializeField] private TextMeshProUGUI goldPerSecondText; // Texto que muestra oro por segundo
+    [SerializeField] private TextMeshProUGUI goldText;
+    [SerializeField] private TextMeshProUGUI goldPerSecondText;
 
-    // ==========================
-    // VARIABLES PRINCIPALES
-    // ==========================
-    [SerializeField] private double gold;          // Oro actual
-    [SerializeField] private double goldPerSecond; // Oro generado automáticamente por segundo
+    [SerializeField] private double gold;
+    [SerializeField] private double goldPerSecond;
 
-    // Control para actualizar la UI a una cadencia razonable
-    [SerializeField] private float uiUpdateInterval = 0.1f; // intervalo en segundos para refrescar UI durante progresión
+    [SerializeField] private float uiUpdateInterval = 0.1f;
     private float uiUpdateTimer = 0f;
 
-    // Propiedad de solo lectura (acceso público al oro actual)
     public double CurrentGold => gold;
+    public double CurrentGoldPerSecond => goldPerSecond;
 
-    // ==========================
-    // MÉTODO: Awake()
-    // Configura el singleton y asegura que no se duplique
-    // ==========================
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -50,54 +67,31 @@ public class GoldManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
         SceneManager.sceneLoaded += OnSceneLoaded;
 
-        // Actualiza la UI en caso de que los valores se asignaran antes de Awake
         UpdateGoldUI();
     }
 
-    // ==========================
-    // MÉTODO: Start()
-    // Aplica los datos guardados una vez que los managers existen
-    // ==========================
     private void Start()
     {
-        // Si hay datos guardados que se cargaron antes de que existiera GoldManager, aplícalos ahora
         GameSaveManager.Instance?.ApplyLoadedDataToManagers();
-
-        // Asegura que la UI refleje los valores aplicados
         UpdateGoldUI();
     }
 
-    // ==========================
-    // MÉTODO: OnDestroy()
-    // Limpia las suscripciones al cambiar de escena
-    // ==========================
     private void OnDestroy()
     {
         SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
-    /// <summary>
-    /// Cuando carga una escena, busca y asigna los textos automáticamente.
-    /// </summary>
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         AssignUIReferences();
         UpdateGoldUI();
     }
 
-    // ==========================
-    // MÉTODO: Update()
-    // Incrementa oro de forma progresiva cada frame según goldPerSecond
-    // ==========================
     private void Update()
     {
-        // Sumar progresivamente según el tiempo transcurrido
         if (Math.Abs(goldPerSecond) > double.Epsilon)
-        {
             gold += goldPerSecond * Time.deltaTime;
-        }
 
-        // Actualizar la UI a una cadencia controlada para evitar llamadas excesivas
         uiUpdateTimer += Time.deltaTime;
         if (uiUpdateTimer >= uiUpdateInterval)
         {
@@ -107,10 +101,6 @@ public class GoldManager : MonoBehaviour
         }
     }
 
-    // ==========================
-    // MÉTODO: AddGold()
-    // Suma oro inmediato (por ejemplo al matar enemigos)
-    // ==========================
     public void AddGold(double amount)
     {
         gold += amount;
@@ -118,20 +108,12 @@ public class GoldManager : MonoBehaviour
         OnGoldChanged?.Invoke();
     }
 
-    // ==========================
-    // MÉTODO: AddGoldPerSecond()
-    // Aumenta el oro pasivo generado por segundo
-    // ==========================
     public void AddGoldPerSecond(double amount)
     {
         goldPerSecond += amount;
         UpdateGoldUI();
     }
 
-    // ==========================
-    // MÉTODO: SpendGold()
-    // Resta oro si hay suficiente y devuelve true, si no devuelve false
-    // ==========================
     public bool SpendGold(double amount)
     {
         if (gold >= amount)
@@ -141,18 +123,13 @@ public class GoldManager : MonoBehaviour
             OnGoldChanged?.Invoke();
             return true;
         }
-        return false; // No hay suficiente oro
+        return false;
     }
 
-    // ==========================
-    // MÉTODO: UpdateGoldUI()
-    // Actualiza los textos de oro y oro por segundo en pantalla
-    // ==========================
     private void UpdateGoldUI()
     {
         if (goldText == null || goldPerSecondText == null)
         {
-            // Buscar dinámicamente si faltan referencias
             var uiTexts = UnityEngine.Object.FindObjectsOfType<TextMeshProUGUI>(true);
             foreach (var text in uiTexts)
             {
@@ -165,45 +142,36 @@ public class GoldManager : MonoBehaviour
             goldText.text = FormatNumber(gold);
 
         if (goldPerSecondText != null)
-            goldPerSecondText.text = FormatNumber(goldPerSecond) + " Ops";
+            goldPerSecondText.text = FormatNumber(goldPerSecond) + " Gps";
     }
 
-
-
-    // ==========================
-    // MÉTODO: FormatNumber()
-    // Convierte números grandes en formato compacto (K, M, B, etc.)
-    // ==========================
     public static string FormatNumber(double number)
     {
-        string[] suffixes = { "", "K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "Sin", "De", "Ud", "Dd", "Td", "Qt", "Qd", "Sd", "St", "Od", "Nd", "Vg", "Uv", "Dv", "Tv" };
+        string[] suffixes = { "", "K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "Sin", "De",
+                              "Ud", "Dd", "Td", "Qt", "Qd", "Sd", "St", "Od", "Nd", "Vg", "Uv", "Dv", "Tv" };
         int index = 0;
+
         while (number >= 1000 && index < suffixes.Length - 1)
         {
             number /= 1000;
             index++;
         }
+
         return number.ToString("0.#") + suffixes[index];
     }
 
-    // ==========================
-    // MÉTODO: SetTextReferences()
-    // Permite reasignar textos desde otro script de UI (ej: UIManager)
-    // ==========================
     private void AssignUIReferences()
     {
         if (goldText == null)
         {
-            GameObject goldObj = GameObject.FindWithTag("GoldText");
-            if (goldObj != null)
-                goldText = goldObj.GetComponent<TextMeshProUGUI>();
+            var obj = GameObject.FindWithTag("GoldText");
+            if (obj != null) goldText = obj.GetComponent<TextMeshProUGUI>();
         }
 
         if (goldPerSecondText == null)
         {
-            GameObject opsObj = GameObject.FindWithTag("GoldPerSecondText");
-            if (opsObj != null)
-                goldPerSecondText = opsObj.GetComponent<TextMeshProUGUI>();
+            var obj = GameObject.FindWithTag("GoldPerSecondText");
+            if (obj != null) goldPerSecondText = obj.GetComponent<TextMeshProUGUI>();
         }
     }
 
@@ -220,4 +188,3 @@ public class GoldManager : MonoBehaviour
         UpdateGoldUI();
     }
 }
-

@@ -1,3 +1,16 @@
+/*
+    MiniBossController
+    ------------------
+    Controla por completo el comportamiento del MiniBoss, incluyendo:
+    - Movimiento interpolado hacia posiciones objetivo.
+    - Sistema de vida basado en cantidad de golpes.
+    - Actualización de barra de vida.
+    - Animaciones de caminar, recibir daño y morir.
+    - Desactivación de colisiones al morir.
+    - Invocación de un callback externo cuando el MiniBoss muere (usado por el MiniGameController).
+    - Destrucción automática del objeto una vez completada la animación de muerte.
+*/
+
 using System;
 using System.Collections;
 using UnityEngine;
@@ -12,15 +25,12 @@ public class MiniBossController : MonoBehaviour
 
     [Header("Vida / daño")]
     [SerializeField] private int totalHits = 10;
-    [SerializeField] private float deathDelay = 0.9f; // tiempo para esperar anim de muerte antes de callback/destruir
+    [SerializeField] private float deathDelay = 0.9f;
 
     private int currentHits = 0;
     private bool isDead = false;
 
-    // movimiento
     private Coroutine moveRoutine;
-
-    // Callback asignado por el MiniGameController
     private Action onDeath;
 
     // -------------------------
@@ -28,9 +38,9 @@ public class MiniBossController : MonoBehaviour
     // -------------------------
     public void MoveTo(Vector3 targetPos, Action onArrived)
     {
-        // Cancelar corrutina previa si existe
         if (moveRoutine != null)
             StopCoroutine(moveRoutine);
+
         moveRoutine = StartCoroutine(MoveRoutine(targetPos, onArrived));
     }
 
@@ -58,7 +68,7 @@ public class MiniBossController : MonoBehaviour
     // -------------------------
     public void TakeDamage()
     {
-        if (isDead) return; // protección contra hits extra
+        if (isDead) return;
 
         currentHits++;
         if (anim != null) anim.SetTrigger("Hit");
@@ -75,17 +85,12 @@ public class MiniBossController : MonoBehaviour
         if (isDead) yield break;
         isDead = true;
 
-        // Añadir gold, disparar anim de muerte
         GoldManager.Instance?.AddGold(50);
         if (anim != null) anim.SetTrigger("Die");
 
-        // Desactivar colisiones / lógica de daño para evitar más eventos
-        var colliders2D = GetComponentsInChildren<Collider2D>();
-        foreach (var c in colliders2D) c.enabled = false;
-        var colliders = GetComponentsInChildren<Collider>();
-        foreach (var c in colliders) c.enabled = false;
+        foreach (var c in GetComponentsInChildren<Collider2D>()) c.enabled = false;
+        foreach (var c in GetComponentsInChildren<Collider>()) c.enabled = false;
 
-        // Esperar a que la animación de muerte se reproduzca (o deathDelay)
         float wait = Mathf.Max(0.05f, deathDelay);
         float timer = 0f;
         while (timer < wait)
@@ -94,7 +99,6 @@ public class MiniBossController : MonoBehaviour
             yield return null;
         }
 
-        // Invocar callback UNA VEZ (si existe)
         try
         {
             onDeath?.Invoke();
@@ -104,25 +108,17 @@ public class MiniBossController : MonoBehaviour
             Debug.LogWarning("[MiniBossController] Error al invocar onDeath: " + ex);
         }
 
-        // Opcional: destruir el boss después de la muerte para limpiar la escena
         Destroy(gameObject);
-        yield break;
     }
 
     // -------------------------
     // CALLBACK / UTIL
     // -------------------------
-    /// <summary>
-    /// Asigna (o reemplaza) el callback que será llamado una vez al morir.
-    /// </summary>
     public void AssignDeathCallback(Action callback)
     {
-        onDeath = callback; // reemplaza, así evitamos doble suscripción accidental
+        onDeath = callback;
     }
 
-    /// <summary>
-    /// Limpia el callback (por seguridad).
-    /// </summary>
     public void ClearDeathCallback()
     {
         onDeath = null;

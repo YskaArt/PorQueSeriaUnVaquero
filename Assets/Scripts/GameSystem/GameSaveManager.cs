@@ -2,46 +2,78 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// Gestiona el guardado y carga de progreso del jugador:
-/// - Niveles de upgrades
-/// - Cantidad de oro
-/// - Última escena jugada
-/// - Tiempo restante para minijuego
-/// Persistencia mediante PlayerPrefs + JSON
-/// </summary>
+///
+/// GameSaveManager
+/// ----------------
+/// Sistema central de guardado/carga del juego.
+/// Funciona así:
+/// - Detecta automáticamente todos los UpgradeBase (por Resources, FindAll o fallback del inspector).
+/// - Guarda oro, niveles de upgrades, cooldowns y escena actual.
+/// - Carga los datos y aplica los niveles directamente a cada UpgradeBase mediante ApplyLoadedState().
+/// - Recalcula GPS después de cargar.
+/// - Mantiene persistencia usando PlayerPrefs y JSON.
+/// - Garantiza que la carga se aplique antes de que otros managers empiecen a funcionar.
+///
+
 public class GameSaveManager : MonoBehaviour
 {
     public static GameSaveManager Instance { get; private set; }
 
-    [Header("Upgrades del Juego")]
-    [SerializeField] private UpgradeData[] allUpgrades;
+    [Header("Inspector fallback (opcional)")]
+    [SerializeField] private UpgradeBase[] allUpgrades;
 
     private const string SaveKey = "IdleGameSave";
-
     private GameSaveData loadedData;
+    private UpgradeBase[] allUpgradesCache;
 
     private void Awake()
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        // Cargar los datos en Awake para que estén disponibles durante Start de otros managers
         LoadGame();
     }
 
     private void Start()
     {
-        // Si hay datos cargados pendientes, aplicar a los managers ahora
         ApplyLoadedDataToManagers();
     }
 
+    // Obtiene todos los upgrades disponibles usando varios métodos de detección
+    private UpgradeBase[] GetAllUpgrades()
+    {
+        if (allUpgradesCache != null) return allUpgradesCache;
+
+        var fromResources = Resources.LoadAll<UpgradeBase>("Upgrades");
+        if (fromResources != null && fromResources.Length > 0)
+        {
+            allUpgradesCache = fromResources;
+            Debug.Log($"[GameSaveManager] Loaded {allUpgradesCache.Length} upgrades from Resources/Upgrades.");
+            return allUpgradesCache;
+        }
+
+        var fromFindAll = Resources.FindObjectsOfTypeAll<UpgradeBase>();
+        if (fromFindAll != null && fromFindAll.Length > 0)
+        {
+            allUpgradesCache = fromFindAll;
+            Debug.Log($"[GameSaveManager] Loaded {allUpgradesCache.Length} upgrades via FindObjectsOfTypeAll.");
+            return allUpgradesCache;
+        }
+
+        if (allUpgrades != null && allUpgrades.Length > 0)
+        {
+            allUpgradesCache = allUpgrades;
+            Debug.Log($"[GameSaveManager] Loaded {allUpgradesCache.Length} upgrades from Inspector fallback.");
+            return allUpgradesCache;
+        }
+
+        allUpgradesCache = Array.Empty<UpgradeBase>();
+        Debug.LogWarning("[GameSaveManager] No upgrades found by any method!");
+        return allUpgradesCache;
+    }
+
+    // ================== SAVE ==================
     public void SaveGame()
     {
         if (GoldManager.Instance == null) return;
@@ -51,13 +83,15 @@ public class GameSaveManager : MonoBehaviour
             gold = GoldManager.Instance.CurrentGold,
             upgrades = new List<UpgradeSaveData>(),
             lastScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name,
-            //timeBeforeMiniGame = GameManager.Instance != null ? GameManager.Instance.GetRemainingTime() : 0,
-            horseCooldownRemaining = HorseCooldownManager.Instance != null ? HorseCooldownManager.Instance.GetRemainingCooldown() : 0f,
+            horseCooldownRemaining = HorseCooldownManager.Instance != null
+                                   ? HorseCooldownManager.Instance.GetRemainingCooldown()
+                                   : 0f,
             lastSaveTimestamp = DateTime.Now.ToBinary()
         };
 
-        foreach (var upgrade in allUpgrades)
+        foreach (var upgrade in GetAllUpgrades())
         {
+            if (upgrade == null) continue;
             saveData.upgrades.Add(new UpgradeSaveData
             {
                 upgradeName = upgrade.upgradeName,
@@ -69,14 +103,15 @@ public class GameSaveManager : MonoBehaviour
         PlayerPrefs.SetString(SaveKey, json);
         PlayerPrefs.Save();
 
-        Debug.Log("✅ Juego guardado: " + json);
+        Debug.Log("Juego guardado: " + json);
     }
 
+    // ================== LOAD ==================
     public void LoadGame()
     {
         if (!PlayerPrefs.HasKey(SaveKey))
         {
-            Debug.Log("ℹ No hay datos guardados.");
+            Debug.Log("No hay datos guardados.");
             return;
         }
 
@@ -85,96 +120,64 @@ public class GameSaveManager : MonoBehaviour
 
         if (loadedData == null)
         {
-            Debug.LogWarning("⚠ Error al cargar datos.");
+            Debug.LogWarning("Error al cargar datos.");
             return;
         }
 
-        // Restaurar oro si GoldManager ya está disponible
-        if (GoldManager.Instance != null)
+        // Aplicar niveles guardados a los ScriptableObjects detectados
+        var all = GetAllUpgrades();
+        if (loadedData.upgrades != null && all != null)
         {
-            GoldManager.Instance.AddGold(loadedData.gold - GoldManager.Instance.CurrentGold);
-        }
+            var map = new Dictionary<string, int>();
+            foreach (var s in loadedData.upgrades)
+                map[s.upgradeName] = s.currentLevel;
 
-        // Restaurar upgrades
-        double totalOPS = 0;
-        foreach (var savedUpgrade in loadedData.upgrades)
-        {
-            foreach (var upgrade in allUpgrades)
+            foreach (var up in all)
             {
-                if (upgrade.upgradeName == savedUpgrade.upgradeName)
-                {
-                    upgrade.currentLevel = savedUpgrade.currentLevel;
-                    totalOPS += upgrade.goldPerSecondPerLevel * upgrade.currentLevel;
-                }
+                if (up == null) continue;
+                if (map.TryGetValue(up.upgradeName, out int lvl))
+                    up.ApplyLoadedState(lvl);
+                else
+                    up.ApplyLoadedState(0);
             }
         }
 
+        // Aplicar oro y cooldown (si managers ya existen)
         if (GoldManager.Instance != null)
-        {
-            GoldManager.Instance.SetGoldPerSecond(totalOPS);
-        }
+            GoldManager.Instance.AddGold(loadedData.gold - GoldManager.Instance.CurrentGold);
 
-        // Restaurar cooldown del caballo si existe la instancia
         if (HorseCooldownManager.Instance != null)
-        {
             HorseCooldownManager.Instance.SetRemainingCooldown(loadedData.horseCooldownRemaining);
-        }
 
-        Debug.Log("✅ Juego cargado: " + json);
-
-        // Si GoldManager no estaba disponible en el momento de la carga, apply later when it becomes available
-        if (GoldManager.Instance == null)
-        {
-            Debug.Log("GameSaveManager: GoldManager no disponible, se aplicarán los datos cuando esté listo.");
-        }
+        Debug.Log("Juego cargado: " + json);
     }
 
-    // Public helper: aplica los datos cargados al GoldManager si están pendientes
+    // Aplicar valores post-load: GPS, cooldowns y oro
     public void ApplyLoadedDataToManagers()
     {
-        if (loadedData == null)
-            return;
+        if (loadedData == null) return;
 
-        // Aplicar oro
         if (GoldManager.Instance != null)
-        {
             GoldManager.Instance.AddGold(loadedData.gold - GoldManager.Instance.CurrentGold);
-        }
 
-        // Aplicar OPS calculado a partir de upgrades
-        double totalOPS = 0;
-        foreach (var savedUpgrade in loadedData.upgrades)
+        double totalGPS = 0;
+        foreach (var u in GetAllUpgrades())
         {
-            foreach (var upgrade in allUpgrades)
-            {
-                if (upgrade.upgradeName == savedUpgrade.upgradeName)
-                {
-                    upgrade.currentLevel = savedUpgrade.currentLevel;
-                    totalOPS += upgrade.goldPerSecondPerLevel * upgrade.currentLevel;
-                }
-            }
+            if (u is GPSUpgradeData gps)
+                totalGPS += gps.GetEffectiveGPS();
         }
 
         if (GoldManager.Instance != null)
-        {
-            GoldManager.Instance.SetGoldPerSecond(totalOPS);
-        }
+            GoldManager.Instance.SetGoldPerSecond(totalGPS);
 
-        // Aplicar cooldown del caballo si existe la instancia
         if (HorseCooldownManager.Instance != null)
-        {
             HorseCooldownManager.Instance.SetRemainingCooldown(loadedData.horseCooldownRemaining);
-        }
 
-        Debug.Log("GameSaveManager: Datos aplicados a los managers desde loadedData.");
+        Debug.Log("[GameSaveManager] Loaded data applied to managers.");
     }
 
-    public string GetLastScene()
-    {
-        return loadedData != null && !string.IsNullOrEmpty(loadedData.lastScene)
-            ? loadedData.lastScene
-            : null;
-    }
+    // ================== GETTERS ==================
+    public string GetLastScene() => loadedData != null ? loadedData.lastScene : null;
 
     public float GetSavedTimer()
     {
@@ -184,24 +187,18 @@ public class GameSaveManager : MonoBehaviour
         {
             DateTime lastSaveTime = DateTime.FromBinary(loadedData.lastSaveTimestamp);
             double secondsPassed = (DateTime.Now - lastSaveTime).TotalSeconds;
-
             float remaining = loadedData.timeBeforeMiniGame - (float)secondsPassed;
             return Mathf.Max(remaining, 0);
         }
-
         return 0;
     }
 
+    // ================== RESET ==================
     public void ResetGame()
     {
         PlayerPrefs.DeleteKey(SaveKey);
         PlayerPrefs.Save();
-        Debug.Log("🗑 Progreso borrado.");
-    }
-
-    private void OnApplicationQuit()
-    {
-        SaveGame();
+        Debug.Log("[GameSaveManager] Save cleared.");
     }
 }
 
