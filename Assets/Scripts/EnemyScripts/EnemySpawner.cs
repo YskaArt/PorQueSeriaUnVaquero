@@ -111,18 +111,18 @@ public class EnemySpawner : MonoBehaviour
 
         if (patternCoroutine != null)
         {
-            StopCoroutine(patternCoroutine);
+            try { StopCoroutine(patternCoroutine); }
+            catch { }
             patternCoroutine = null;
             isSpawningPattern = false;
         }
 
         if (spawnCoroutine != null)
         {
-            StopCoroutine(spawnCoroutine);
+            try { StopCoroutine(spawnCoroutine); }
+            catch { }
             spawnCoroutine = null;
         }
-
-        StopAllCoroutines();
     }
 
     public void StartSpawning()

@@ -18,7 +18,7 @@ public class TilemapScroller : MonoBehaviour
     [SerializeField] private Grid grid;
 
     [Header("Configuración del mapa (en celdas)")]
-    [SerializeField] private int mapWidthInTiles = 10;
+    [SerializeField] private int mapWidthInTiles;
     [SerializeField] private int mapHeightInTiles = 15;
 
     [Header("Velocidad del desplazamiento")]

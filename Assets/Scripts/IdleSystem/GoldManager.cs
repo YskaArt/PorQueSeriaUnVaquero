@@ -130,7 +130,10 @@ public class GoldManager : MonoBehaviour
     {
         if (goldText == null || goldPerSecondText == null)
         {
-            var uiTexts = UnityEngine.Object.FindObjectsOfType<TextMeshProUGUI>(true);
+            var uiTexts = UnityEngine.Object.FindObjectsByType<TextMeshProUGUI>(
+                 FindObjectsSortMode.None
+                    );
+
             foreach (var text in uiTexts)
             {
                 if (text.name == "GoldText") goldText = text;

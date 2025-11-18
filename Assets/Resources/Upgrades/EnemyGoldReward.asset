@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fb10a15cbf634d2429083b2922828292, type: 3}
+  m_Name: EnemyGoldReward
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyGoldUpgradeData
+  upgradeName: Increase Enemy Gold Drops
+  baseCost: 50
+  costMultiplier: 3.45
+  currentLevel: 0
+  baseEnemyGold: 1
+  enemyPercentOfGPSPerLevel: 0.5
+  hasBonus: 0
+  bonusUnlockLevel: 50
+  bonusCost: 10000
+  bonusMultiplier: 2
+  bonusPurchased: 0

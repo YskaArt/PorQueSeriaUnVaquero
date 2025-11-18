@@ -72,7 +72,7 @@ public class MiniBossController : MonoBehaviour
 
         currentHits++;
         if (anim != null) anim.SetTrigger("Hit");
-
+        SFXManager.Instance.Play("RevolverShoot");
         if (healthBar != null)
             healthBar.fillAmount = 1f - (float)currentHits / Mathf.Max(1, totalHits);
 
@@ -85,7 +85,15 @@ public class MiniBossController : MonoBehaviour
         if (isDead) yield break;
         isDead = true;
 
-        GoldManager.Instance?.AddGold(50);
+        if (GoldManager.Instance != null)
+        {
+            double reward = 1.0;
+
+            if (EnemyGoldManager.Instance != null)
+                reward = EnemyGoldManager.Instance.GetEnemyGoldReward();
+
+            GoldManager.Instance.AddGold(reward * 50);
+        }
         if (anim != null) anim.SetTrigger("Die");
 
         foreach (var c in GetComponentsInChildren<Collider2D>()) c.enabled = false;

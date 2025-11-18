@@ -27,24 +27,14 @@ public class MainMenuController : MonoBehaviour
     {
         if (Input.GetMouseButtonDown(0) || Input.touchCount > 0)
         {
-            LoadGame();
+            StartGame();
         }
     }
 
-    private void LoadGame()
+ 
+    public void StartGame()
     {
-        string lastScene = null;
-
-        if (GameSaveManager.Instance != null)
-            lastScene = GameSaveManager.Instance.GetLastScene();
-
-        string sceneToLoad = !string.IsNullOrEmpty(lastScene) ? lastScene : defaultScene;
-        SceneManager.LoadScene(sceneToLoad);
-    }
-
-    public void StartGame(string sceneName)
-    {
-        SceneManager.LoadScene(sceneName);
+        SceneManager.LoadScene(defaultScene);
     }
 
     public void QuitGame()

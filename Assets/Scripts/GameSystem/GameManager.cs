@@ -58,7 +58,12 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        currentLevelIndex = Mathf.Clamp(startLevelIndex, 0, Mathf.Max(0, levels.Count - 1));
+        // 🔥 Cargar nivel guardado
+        if (GameSaveManager.Instance != null)
+            currentLevelIndex = Mathf.Clamp(GameSaveManager.Instance.GetSavedLevelIndex(), 0, Mathf.Max(0, levels.Count - 1));
+        else
+            currentLevelIndex = Mathf.Clamp(startLevelIndex, 0, Mathf.Max(0, levels.Count - 1));
+
         StartCoroutine(InitializeGame());
     }
 
@@ -100,6 +105,10 @@ public class GameManager : MonoBehaviour
         ReassignDynamicReferences(activeScroller, spawner);
 
         Debug.Log($"[GameManager] Nivel aplicado: {currentLevel?.levelName ?? currentLevelIndex.ToString()}");
+
+        // Guardar inmediatamente el cambio de nivel aplicado
+        if (GameSaveManager.Instance != null)
+            GameSaveManager.Instance.SaveGame();
     }
 
     private void ReassignDynamicReferences(TilemapScroller newScroller, EnemySpawner newSpawner)
@@ -156,10 +165,7 @@ public class GameManager : MonoBehaviour
     // ================== SIGUIENTE NIVEL ==================
     public void NextLevel()
     {
-        int nextIndex = currentLevelIndex + 1;
-        if (nextIndex >= levels.Count)
-            nextIndex = 0;
-
+        int nextIndex = GetRandomDifferentLevelIndex();
         GotoLevel(nextIndex);
     }
 
@@ -233,5 +239,11 @@ public class GameManager : MonoBehaviour
         do { newIndex = Random.Range(0, levels.Count); }
         while (newIndex == currentLevelIndex);
         return newIndex;
+    }
+
+    public void GotoRandomLevel()
+    {
+        int nextIndex = GetRandomDifferentLevelIndex();
+        GotoLevel(nextIndex);
     }
 }

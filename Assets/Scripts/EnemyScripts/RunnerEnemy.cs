@@ -40,6 +40,7 @@ public class RunnerEnemy : MonoBehaviour, IPoolResettable
 
     public void Eliminar()
     {
+        ParticleManager.Instance.PlayAtPosition(transform.position);
         if (GoldManager.Instance != null)
         {
             double reward = 1.0;

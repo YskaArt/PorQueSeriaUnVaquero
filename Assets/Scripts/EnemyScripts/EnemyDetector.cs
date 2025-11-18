@@ -8,11 +8,20 @@ using UnityEngine;
 public class EnemyDetector : MonoBehaviour
 {
     [SerializeField] private Animator anim;
-
+    [SerializeField] private HorseSkillController horseSkill;
     private void OnTriggerEnter2D(Collider2D other)
     {
+        if (horseSkill == null || !horseSkill.IsActive)
+        {
+            SFXManager.Instance.Play("Attack");
+        }
+        else
+        {
+            SFXManager.Instance.Play("Horse");
+        }
         RunnerEnemy enemigo = other.GetComponent<RunnerEnemy>();
 
+       
         anim.SetTrigger("Attack");
 
         if (enemigo != null)

@@ -56,6 +56,7 @@ public class HorseSkillController : MonoBehaviour
     private Coroutine activeSkillCoroutine;
     private bool isSkillActive = false;
     private bool isMiniGameActive = false;
+    public bool IsActive => isSkillActive;
 
     private void Start()
     {
@@ -87,11 +88,12 @@ public class HorseSkillController : MonoBehaviour
 
     private void ActivateHorse()
     {
+
         if (HorseCooldownManager.Instance == null) return;
         if (!HorseCooldownManager.Instance.IsReady() || isMiniGameActive || isSkillActive) return;
 
         HorseCooldownManager.Instance.StartCooldown();
-
+        SFXManager.Instance.Play("Yeehaa");
         if (horseButton != null)
             horseButton.interactable = false;
 

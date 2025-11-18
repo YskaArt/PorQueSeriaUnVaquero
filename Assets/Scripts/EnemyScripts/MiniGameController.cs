@@ -46,17 +46,18 @@ public class MiniGameController : MonoBehaviour
     [Header("Boss y posiciones")]
     [SerializeField] private Transform bossStartPosition;
     [SerializeField] private Transform bossTargetPosition;
-    [SerializeField] private List<GameObject> bossPrefabs;
-
+    [SerializeField] private List<GameObject> bossPrefabs; // prefabs que contienen MiniBossController
     private GameObject activeBoss;
     private MiniBossController activeBossController;
 
     [Header("Minigame config")]
-    [SerializeField] private float minigameDelay = 240f;
-    [SerializeField] private float preDisableTime = 10f;
+    [SerializeField] private float minigameDelay = 240f; // 4 minutos
+    [SerializeField] private float preDisableTime = 10f; // 10s antes del minigame se apaga el spawner
 
     private Coroutine minigameTimerCoroutine;
     private bool isMiniGameActive = false;
+
+    // --- Flags para evitar ejecuciones dobles ---
     private bool hasHandledBossDeath = false;
 
     private void Start()
@@ -70,26 +71,20 @@ public class MiniGameController : MonoBehaviour
         StartMiniGameCountdown();
     }
 
-    // Temporizador principal del minigame
     public void StartMiniGameCountdown()
     {
-        if (minigameTimerCoroutine != null)
-            StopCoroutine(minigameTimerCoroutine);
-
+        if (minigameTimerCoroutine != null) StopCoroutine(minigameTimerCoroutine);
         minigameTimerCoroutine = StartCoroutine(MinigameCountdown());
     }
 
     private IEnumerator MinigameCountdown()
     {
         float remaining = minigameDelay;
-
         while (remaining > 0f)
         {
             remaining -= Time.deltaTime;
 
-            if (remaining <= preDisableTime &&
-                enemySpawner != null &&
-                enemySpawner.IsSpawning)
+            if (remaining <= preDisableTime && enemySpawner != null && enemySpawner.IsSpawning)
             {
                 Debug.Log("[MiniGame] Desactivando spawner previo al minigame...");
                 enemySpawner.StopSpawning();
@@ -101,7 +96,6 @@ public class MiniGameController : MonoBehaviour
         StartMiniGame();
     }
 
-    // Inicio del minigame
     public void StartMiniGame()
     {
         if (isMiniGameActive) return;
@@ -110,8 +104,12 @@ public class MiniGameController : MonoBehaviour
 
         Debug.Log("[MiniGame] Iniciando minigame...");
 
-        tilemapScroller?.SaveOriginalSpeed();
-        tilemapScroller?.SetScrollSpeed(0f);
+        if (tilemapScroller != null)
+        {
+            tilemapScroller.SaveOriginalSpeed();
+            tilemapScroller.SetScrollSpeed(0f);
+        }
+        else Debug.LogWarning("[MiniGame] No hay TilemapScroller activo.");
 
         horseSkill?.ForceStopHorseSkill();
         horseSkill?.SetMiniGameActive(true);
@@ -124,15 +122,15 @@ public class MiniGameController : MonoBehaviour
         if (bossPrefabs != null && bossPrefabs.Count > 0 && bossStartPosition != null)
         {
             int bossIndex = Random.Range(0, bossPrefabs.Count);
-            activeBoss = Instantiate(bossPrefabs[bossIndex],
-                                     bossStartPosition.position,
-                                     Quaternion.identity);
+            activeBoss = Instantiate(bossPrefabs[bossIndex], bossStartPosition.position, Quaternion.identity);
 
             activeBossController = activeBoss.GetComponent<MiniBossController>();
-
             if (activeBossController != null)
             {
                 activeBossController.AssignDeathCallback(OnMiniBossDefeated);
+
+                // ASIGNAR target al shooter (evita buscarlo en cada hit)
+                playerShooter?.SetTarget(activeBossController);
 
                 activeBossController.MoveTo(bossTargetPosition.position, () =>
                 {
@@ -150,16 +148,17 @@ public class MiniGameController : MonoBehaviour
         }
     }
 
-    // Handler de muerte del miniboss
     public void OnMiniBossDefeated()
     {
         if (hasHandledBossDeath) return;
         hasHandledBossDeath = true;
 
-        Debug.Log("[MiniGame] Boss derrotado. Cerrando minigame...");
+        Debug.Log("[MiniGame] Boss derrotado. Iniciando cierre y cambio de nivel...");
 
-        activeBossController?.ClearDeathCallback();
-
+        if (activeBossController != null)
+        {
+            activeBossController.ClearDeathCallback();
+        }
         if (activeBoss != null)
         {
             Destroy(activeBoss);
@@ -167,7 +166,9 @@ public class MiniGameController : MonoBehaviour
             activeBossController = null;
         }
 
+        // Limpiar referencia target del shooter
         playerShooter?.StopShooting();
+        playerShooter?.SetTarget(null);
 
         StartCoroutine(HandleEndOfMinigame());
     }
@@ -180,38 +181,39 @@ public class MiniGameController : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("[MiniGame] GameManager no encontrado. No se puede cambiar de nivel.");
+            Debug.LogWarning("[MiniGame] GameManager no encontrado. No se puede cambiar de nivel automáticamente.");
         }
 
         yield break;
     }
 
-    // Llamado para cancelar un minigame en curso o limpiar el estado
     public void StopMiniGame()
     {
         if (!isMiniGameActive) return;
         isMiniGameActive = false;
 
-        if (minigameTimerCoroutine != null)
-            StopCoroutine(minigameTimerCoroutine);
-
+        if (minigameTimerCoroutine != null) StopCoroutine(minigameTimerCoroutine);
         minigameTimerCoroutine = null;
 
         playerShooter?.StopShooting();
         playerMovement?.SetLockedForMiniGame(false);
 
-        tilemapScroller?.RestoreOriginalSpeed();
+        if (tilemapScroller != null) tilemapScroller.RestoreOriginalSpeed();
+
         enemySpawner?.RestartSpawning();
 
         horseSkill?.SetMiniGameActive(false);
 
+        // limpiar target del shooter por seguridad
+        playerShooter?.SetTarget(null);
+
         hasHandledBossDeath = false;
     }
 
-    // Reasignación de referencias desde GameManager
     public void ReassignReferences(TilemapScroller newScroller, EnemySpawner newSpawner)
     {
         tilemapScroller = newScroller;
         enemySpawner = newSpawner;
     }
 }
+

@@ -82,6 +82,7 @@ public class GameSaveManager : MonoBehaviour
         {
             gold = GoldManager.Instance.CurrentGold,
             upgrades = new List<UpgradeSaveData>(),
+            currentLevelIndex = GameManager.Instance != null ? GameManager.Instance.GetCurrentLevelIndex() : 0,
             lastScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name,
             horseCooldownRemaining = HorseCooldownManager.Instance != null
                                    ? HorseCooldownManager.Instance.GetRemainingCooldown()
@@ -103,7 +104,7 @@ public class GameSaveManager : MonoBehaviour
         PlayerPrefs.SetString(SaveKey, json);
         PlayerPrefs.Save();
 
-        Debug.Log("Juego guardado: " + json);
+        Debug.Log("[GameSaveManager] Juego guardado: " + json);
     }
 
     // ================== LOAD ==================
@@ -111,7 +112,8 @@ public class GameSaveManager : MonoBehaviour
     {
         if (!PlayerPrefs.HasKey(SaveKey))
         {
-            Debug.Log("No hay datos guardados.");
+            Debug.Log("[GameSaveManager] No hay datos guardados.");
+            loadedData = new GameSaveData(); // inicializar vacío para evitar null checks
             return;
         }
 
@@ -120,7 +122,8 @@ public class GameSaveManager : MonoBehaviour
 
         if (loadedData == null)
         {
-            Debug.LogWarning("Error al cargar datos.");
+            Debug.LogWarning("[GameSaveManager] Error al cargar datos.");
+            loadedData = new GameSaveData();
             return;
         }
 
@@ -149,7 +152,7 @@ public class GameSaveManager : MonoBehaviour
         if (HorseCooldownManager.Instance != null)
             HorseCooldownManager.Instance.SetRemainingCooldown(loadedData.horseCooldownRemaining);
 
-        Debug.Log("Juego cargado: " + json);
+        Debug.Log("[GameSaveManager] Juego cargado: " + json);
     }
 
     // Aplicar valores post-load: GPS, cooldowns y oro
@@ -179,6 +182,11 @@ public class GameSaveManager : MonoBehaviour
     // ================== GETTERS ==================
     public string GetLastScene() => loadedData != null ? loadedData.lastScene : null;
 
+    public int GetSavedLevelIndex()
+    {
+        return loadedData != null ? loadedData.currentLevelIndex : 0;
+    }
+
     public float GetSavedTimer()
     {
         if (loadedData == null) return 0;
@@ -194,11 +202,64 @@ public class GameSaveManager : MonoBehaviour
     }
 
     // ================== RESET ==================
+    // ================== RESET ==================
     public void ResetGame()
     {
+        // 1) Resetear todos los upgrades a 0 (esto también disparará OnLevelChanged en los SOs)
+        var upgrades = GetAllUpgrades();
+        if (upgrades != null)
+        {
+            foreach (var up in upgrades)
+            {
+                if (up == null) continue;
+                up.ApplyLoadedState(0); // aplica nivel 0 y notifica
+            }
+        }
+
+        // 2) Resetear oro y GPS en GoldManager
+        if (GoldManager.Instance != null)
+        {
+            // Restar todo el oro actual para dejar en 0
+            double currentGold = GoldManager.Instance.CurrentGold;
+            if (currentGold != 0)
+                GoldManager.Instance.AddGold(-currentGold);
+
+            // Poner GPS a 0
+            GoldManager.Instance.SetGoldPerSecond(0.0);
+        }
+
+        // 3) Resetear cooldown del caballo
+        if (HorseCooldownManager.Instance != null)
+            HorseCooldownManager.Instance.SetRemainingCooldown(0f);
+
+        // 4) Reinicializar loadedData en memoria para que GetSavedLevelIndex() devuelva 0
+        loadedData = new GameSaveData
+        {
+            gold = 0,
+            upgrades = new List<UpgradeSaveData>(),
+            lastScene = null,
+            currentLevelIndex = 0,
+            timeBeforeMiniGame = 0f,
+            horseCooldownRemaining = 0f,
+            lastSaveTimestamp = 0
+        };
+
+        // 5) Borrar el save en PlayerPrefs (y escribir el estado limpio opcionalmente)
         PlayerPrefs.DeleteKey(SaveKey);
         PlayerPrefs.Save();
-        Debug.Log("[GameSaveManager] Save cleared.");
+
+        Debug.Log("[GameSaveManager] Save cleared and upgrades reset to level 0.");
+    }
+
+
+    private void OnApplicationQuit()
+    {
+        SaveGame();
+    }
+
+    private void OnApplicationPause(bool paused)
+    {
+        if (paused) SaveGame();
     }
 }
 
@@ -208,6 +269,7 @@ public class GameSaveData
     public double gold;
     public List<UpgradeSaveData> upgrades;
     public string lastScene;
+    public int currentLevelIndex;
     public float timeBeforeMiniGame;
     public float horseCooldownRemaining;
     public long lastSaveTimestamp;

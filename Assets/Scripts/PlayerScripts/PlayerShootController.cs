@@ -29,9 +29,11 @@ public class PlayerShootController : MonoBehaviour
     [SerializeField] private float shootSpeedFast = 2f;
 
     private bool isShooting = false;
+    private MiniBossController targetBoss;
 
     public void StartShooting()
     {
+       
         isShooting = true;
         anim.Play("Shoot");
         anim.speed = shootSpeedNormal;
@@ -46,21 +48,29 @@ public class PlayerShootController : MonoBehaviour
 
     void Update()
     {
-#if UNITY_ANDROID || UNITY_IOS
+
         if (isShooting && Input.touchCount > 0)
             anim.speed = shootSpeedFast;
         else if (isShooting)
             anim.speed = shootSpeedNormal;
-#endif
+
     }
 
-    // Llamado desde un evento de animación
+    // Ahora usa el target cacheado asignado por MiniGameController.
     public void OnShootHit()
     {
-        FindFirstObjectByType<MiniBossController>().TakeDamage();
+        if (targetBoss != null)
+        {
+            targetBoss.TakeDamage();
+            return;
+        }
+
+        // Fallback: intentar encontrar uno (solo si no hay target asignado).
+        var mb = FindFirstObjectByType<MiniBossController>();
+        if (mb != null)
+            mb.TakeDamage();
     }
 
-    // Mueve al jugador fuera de la pantalla al terminar el minijuego
     public void MoveOut(Action onComplete)
     {
         StartCoroutine(MoveUpAndExit(onComplete));
@@ -82,4 +92,11 @@ public class PlayerShootController : MonoBehaviour
 
         onComplete?.Invoke();
     }
+
+    // API pública para que MiniGameController (u otro) asignen el boss activo
+    public void SetTarget(MiniBossController boss)
+    {
+        targetBoss = boss;
+    }
 }
+
