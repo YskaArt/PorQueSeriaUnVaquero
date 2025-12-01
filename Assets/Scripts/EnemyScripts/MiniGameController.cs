@@ -93,6 +93,12 @@ public class MiniGameController : MonoBehaviour
             yield return null;
         }
 
+        while (BonusManager.Instance != null && BonusManager.Instance.IsBonusActive())
+        {
+            // opcional: podrías mostrar una notificación en pantalla aquí
+            yield return null;
+        }
+
         StartMiniGame();
     }
 

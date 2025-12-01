@@ -16,9 +16,9 @@ MonoBehaviour:
   baseCost: 120000
   costMultiplier: 1.2
   currentLevel: 0
-  gpsPerLevel: 500
   hasBonus: 0
-  bonusUnlockLevel: 25
-  bonusCost: 10000
-  bonusMultiplier: 2
-  bonusPurchased: 0
+  bonusInterval: 50
+  bonusCost: 345000000
+  bonusMultiplierPerBonus: 1.55
+  bonusCount: 0
+  gpsPerLevel: 500

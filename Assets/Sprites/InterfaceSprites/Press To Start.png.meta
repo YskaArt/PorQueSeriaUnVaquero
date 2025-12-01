@@ -67,7 +67,7 @@ TextureImporter:
   maxTextureSize: 2048
   textureSettings:
     serializedVersion: 2
-    filterMode: 0
+    filterMode: 1
     aniso: 1
     mipBias: 0
     wrapU: 1
@@ -185,10 +185,10 @@ TextureImporter:
       name: Press To Start_0
       rect:
         serializedVersion: 2
-        x: 138
-        y: 182
-        width: 395
-        height: 52
+        x: 148
+        y: 177
+        width: 382
+        height: 58
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -207,7 +207,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 5e97eb03825dee720800000000000000
+    spriteID: d9419c80144082a4292e3de9b1f4e288
     internalID: 0
     vertices: []
     indices: 
@@ -220,6 +220,7 @@ TextureImporter:
       Press To Start_0: 1052797716219969084
       Press To Start_1: -766819302468413014
       Press To Start_10: 3536968777276823270
+      Press To Start_11: 419504283
       Press To Start_2: -1266616268856980104
       Press To Start_3: -8215553471278693605
       Press To Start_4: 5979932964809410021

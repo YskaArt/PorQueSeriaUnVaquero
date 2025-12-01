@@ -7,7 +7,6 @@ TagManager:
   - Enemy
   - GoldText
   - GoldPerSecondText
-  - CoreUI
   layers:
   - Default
   - TransparentFX

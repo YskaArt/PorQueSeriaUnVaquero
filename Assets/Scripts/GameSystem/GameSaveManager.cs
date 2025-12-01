@@ -96,7 +96,8 @@ public class GameSaveManager : MonoBehaviour
             saveData.upgrades.Add(new UpgradeSaveData
             {
                 upgradeName = upgrade.upgradeName,
-                currentLevel = upgrade.currentLevel
+                currentLevel = upgrade.currentLevel,
+                bonusCount = upgrade.HasBonus() ? upgrade.bonusCount : 0
             });
         }
 
@@ -131,17 +132,29 @@ public class GameSaveManager : MonoBehaviour
         var all = GetAllUpgrades();
         if (loadedData.upgrades != null && all != null)
         {
-            var map = new Dictionary<string, int>();
+            var map = new Dictionary<string, UpgradeSaveData>();
             foreach (var s in loadedData.upgrades)
-                map[s.upgradeName] = s.currentLevel;
+                map[s.upgradeName] = s;
 
             foreach (var up in all)
             {
                 if (up == null) continue;
-                if (map.TryGetValue(up.upgradeName, out int lvl))
-                    up.ApplyLoadedState(lvl);
+                if (map.TryGetValue(up.upgradeName, out UpgradeSaveData saved))
+                {
+                    // Aplicar nivel y bonusCount de forma segura
+                    up.ApplyLoadedState(saved.currentLevel);
+                    // Si el upgrade soporta bonus, aplicar también el bonusCount con el método seguro
+                    if (up.HasBonus())
+                    {
+                        up.ApplyLoadedBonusCount(saved.bonusCount);
+                    }
+                }
                 else
+                {
                     up.ApplyLoadedState(0);
+                    if (up.HasBonus())
+                        up.ApplyLoadedBonusCount(0);
+                }
             }
         }
 
@@ -202,7 +215,6 @@ public class GameSaveManager : MonoBehaviour
     }
 
     // ================== RESET ==================
-    // ================== RESET ==================
     public void ResetGame()
     {
         // 1) Resetear todos los upgrades a 0 (esto también disparará OnLevelChanged en los SOs)
@@ -213,6 +225,8 @@ public class GameSaveManager : MonoBehaviour
             {
                 if (up == null) continue;
                 up.ApplyLoadedState(0); // aplica nivel 0 y notifica
+                if (up.HasBonus())
+                    up.ApplyLoadedBonusCount(0);
             }
         }
 
@@ -246,6 +260,7 @@ public class GameSaveManager : MonoBehaviour
 
         // 5) Borrar el save en PlayerPrefs (y escribir el estado limpio opcionalmente)
         PlayerPrefs.DeleteKey(SaveKey);
+        PlayerPrefs.DeleteKey("TutorialSeen");
         PlayerPrefs.Save();
 
         Debug.Log("[GameSaveManager] Save cleared and upgrades reset to level 0.");
@@ -280,4 +295,5 @@ public class UpgradeSaveData
 {
     public string upgradeName;
     public int currentLevel;
+    public int bonusCount; // <--- NUEVO: cantidad de bonuses comprados para este upgrade
 }

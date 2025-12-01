@@ -10,11 +10,9 @@
  * - GetEffectiveGPS() devuelve el GPS final considerando si existe un bonus.
  *
  * BONUS:
- * - Opcional, configurable desde el inspector.
- * - Se desbloquea al alcanzar un nivel mínimo (bonusUnlockLevel).
- * - Tiene un costo bonusCost y al comprarlo aplica bonusMultiplier al GPS base.
- * - BuyBonus() verifica oro suficiente y utiliza GoldManager.SpendGold().
- * - Usa RaiseBonusPurchased() (protegido en UpgradeBase) para disparar eventos.
+ * - Ahora el sistema de bonuses está gestionado desde UpgradeBase (multi-bonus).
+ * - UpgradeBase contiene los parámetros hasBonus, bonusInterval, bonusCost, bonusMultiplierPerBonus y bonusCount.
+ * - GPSUpgradeData usa GetTotalBonusMultiplier() para calcular el efecto.
  *
  * PERSISTENCIA:
  * - ApplyLoadedState() delega en UpgradeBase para restaurar nivel y despachar
@@ -24,7 +22,7 @@
  * - Solo almacena datos y reglas de cálculo del upgrade.
  * - No actualiza el GPS directamente; otro manager (probablemente UpgradeManager
  *   o un sistema de aplicación de upgrades) debe sumar el GPS resultante al
- *   GoldManager al comprar niveles.
+ *   GoldManager al comprar niveles o bonuses.
  */
 
 using UnityEngine;
@@ -35,36 +33,16 @@ public class GPSUpgradeData : UpgradeBase
     [Header("GPS")]
     [SerializeField] public double gpsPerLevel;
 
-    [Header("Bonus (optional)")]
-    public bool hasBonus = false;
-    public int bonusUnlockLevel = 25;
-    public double bonusCost = 10000;
-    public double bonusMultiplier = 2.0;
-    [HideInInspector] public bool bonusPurchased = false;
-
-    public override bool HasBonus() => hasBonus;
-    public override bool IsBonusAvailable() => hasBonus && !bonusPurchased && currentLevel >= bonusUnlockLevel;
-
-    public override bool BuyBonus()
-    {
-        if (!IsBonusAvailable()) return false;
-        if (GoldManager.Instance == null) return false;
-
-        if (GoldManager.Instance.SpendGold(bonusCost))
-        {
-            bonusPurchased = true;
-            RaiseBonusPurchased();
-            return true;
-        }
-        return false;
-    }
+    // (Nota) Los parámetros relacionados con bonus se leen desde la clase base (UpgradeBase):
+    // hasBonus, bonusInterval, bonusCost, bonusMultiplierPerBonus, bonusCount
 
     public double GetBaseGPS() => gpsPerLevel * currentLevel;
 
     public double GetEffectiveGPS()
     {
-        double baseOps = GetBaseGPS();
-        return bonusPurchased ? baseOps * bonusMultiplier : baseOps;
+        double baseGPS = GetBaseGPS();
+        double totalMultiplier = GetTotalBonusMultiplier(); // del UpgradeBase
+        return baseGPS * totalMultiplier;
     }
 
     public override void ApplyLoadedState(int loadedLevel)

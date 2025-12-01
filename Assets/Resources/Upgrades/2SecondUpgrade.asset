@@ -15,10 +15,10 @@ MonoBehaviour:
   upgradeName: Leather Boots
   baseCost: 50
   costMultiplier: 1.15
-  currentLevel: 8
-  gpsPerLevel: 1
+  currentLevel: 50
   hasBonus: 0
-  bonusUnlockLevel: 25
-  bonusCost: 10000
-  bonusMultiplier: 2
-  bonusPurchased: 0
+  bonusInterval: 50
+  bonusCost: 150000
+  bonusMultiplierPerBonus: 1.55
+  bonusCount: 1
+  gpsPerLevel: 1

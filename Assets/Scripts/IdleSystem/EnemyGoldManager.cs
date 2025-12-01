@@ -105,6 +105,8 @@ public class EnemyGoldManager : MonoBehaviour
 
     public double GetEnemyGoldReward()
     {
-        return cachedReward;
+        double baseReward = cachedReward;
+        double multiplier = BonusManager.Instance != null ? BonusManager.Instance.GetEnemyRewardMultiplier() : 1.0;
+        return baseReward * multiplier;
     }
 }

@@ -1,16 +1,5 @@
 ﻿/// <summary>
 /// Sistema completo de generación de enemigos y bonus.
-/// 
-/// Funcionalidades principales:
-/// - Usa object pooling para todos los enemigos y bonus.
-/// - Genera enemigos mediante patrones y también por intervalos.
-/// - Incluye un "Horse Mode" (frenzy) que acelera el spawn y la velocidad.
-/// - Permite activar/desactivar el spawner externamente y cambiar el pool de enemigos.
-/// - Genera bonus cada cierto intervalo independiente del spawn normal.
-/// - Mantiene coroutines controladas para evitar solapamientos o fugas.
-/// 
-/// Este spawner está preparado para niveles con diferentes pools de enemigos,
-/// modos temporales de alta intensidad y optimización mediante pools.
 /// </summary>
 using System.Collections;
 using System.Collections.Generic;
@@ -30,10 +19,22 @@ public class EnemySpawner : MonoBehaviour
     [SerializeField] private float maxSpawnTime = 7f;
     [SerializeField] private float patternInterval = 5f;
     [SerializeField] private float bonusInterval = 20f;
+    [Tooltip("Minimum time (seconds) between spawned Bonus items")]
+    [SerializeField] private float minBonusInterval = 120f;
 
     [Header("Pool")]
     [SerializeField] private Transform worldContainer;
     [SerializeField] private int initialPoolPerPrefab = 10;
+
+    [Header("Bonus spawn checks")]
+    [Tooltip("Radius to consider a spawn point occupied by an enemy or bonus")]
+    [SerializeField] private float spawnPointBlockRadius = 0.6f;
+    [Tooltip("Time (seconds) to consider a spawn point recently used and avoid reusing it")]
+    [SerializeField] private float spawnPointCooldown = 0.75f;
+
+    [Header("Horde settings")]
+    [Tooltip("Cooldown after a horde ends before normal spawns can resume (s)")]
+    [SerializeField] private float hordeEndCooldown = 0.75f;
 
     public float NormalEnemySpeed { get; set; } = 5f;
     public float HorseSkillEnemySpeed { get; set; } = 10f;
@@ -47,6 +48,16 @@ public class EnemySpawner : MonoBehaviour
 
     private bool frenzyMode = false;
     private float frenzySpawnDelay = 0.12f;
+
+    private float lastBonusSpawnTime = -Mathf.Infinity;
+
+    // Bonus horde control
+    private bool bonusHordeActive = false;
+    private Coroutine bonusHordeCoroutine;
+    private float lastHordeEndTime = -Mathf.Infinity;
+
+    // Track last used time per spawn point to avoid immediate reuse
+    private Dictionary<Transform, float> spawnPointLastUsed = new Dictionary<Transform, float>();
 
     public bool IsHorseSkillActive => frenzyMode;
     public bool IsSpawning => isSpawning;
@@ -62,6 +73,14 @@ public class EnemySpawner : MonoBehaviour
 
         foreach (var prefab in enemyPrefabs)
             EnsurePoolFor(prefab);
+
+        // init spawnPointLastUsed
+        if (spawnPoints != null)
+        {
+            foreach (var sp in spawnPoints)
+                if (sp != null && !spawnPointLastUsed.ContainsKey(sp))
+                    spawnPointLastUsed[sp] = -Mathf.Infinity;
+        }
     }
 
     private void Start()
@@ -217,6 +236,87 @@ public class EnemySpawner : MonoBehaviour
         }
     }
 
+    // New API to start a bonus-controlled horde spawn on this spawner
+    public void StartBonusHorde(float duration, float spawnInterval, float enemySpeed)
+    {
+        if (bonusHordeActive) return;
+        bonusHordeActive = true;
+
+        // Stop any pattern running
+        if (patternCoroutine != null)
+        {
+            try { StopCoroutine(patternCoroutine); } catch { }
+            patternCoroutine = null;
+            isSpawningPattern = false;
+        }
+
+        // Stop normal spawn loop so it respects bonusHordeActive
+        if (spawnCoroutine != null)
+        {
+            try { StopCoroutine(spawnCoroutine); } catch { }
+            spawnCoroutine = null;
+        }
+
+        if (bonusHordeCoroutine != null)
+        {
+            try { StopCoroutine(bonusHordeCoroutine); } catch { }
+            bonusHordeCoroutine = null;
+        }
+
+        bonusHordeCoroutine = StartCoroutine(BonusHordeSpawnRoutine(duration, spawnInterval, enemySpeed));
+    }
+
+    public void StopBonusHordeImmediate()
+    {
+        if (!bonusHordeActive) return;
+        bonusHordeActive = false;
+        if (bonusHordeCoroutine != null)
+        {
+            try { StopCoroutine(bonusHordeCoroutine); } catch { }
+            bonusHordeCoroutine = null;
+        }
+        lastHordeEndTime = Time.time;
+
+        // Restart main spawn loop
+        if (spawnCoroutine != null) { StopCoroutine(spawnCoroutine); spawnCoroutine = null; }
+        spawnCoroutine = StartCoroutine(SpawnRoutine());
+    }
+
+    private IEnumerator BonusHordeSpawnRoutine(float duration, float spawnInterval, float enemySpeed)
+    {
+        float timer = 0f;
+        System.Random rnd = new System.Random();
+
+        while (timer < duration && isSpawning)
+        {
+            // Spawn at a free point if possible
+            Transform free = GetRandomFreeSpawnPoint();
+            if (free != null && enemyPrefabs.Count > 0)
+            {
+                GameObject prefab = enemyPrefabs[Random.Range(0, enemyPrefabs.Count)];
+                GameObject go = SpawnFromPool(prefab, free.position, Quaternion.identity);
+                var runner = go.GetComponent<RunnerEnemy>();
+                runner?.SetFallSpeed(enemySpeed > 0f ? enemySpeed : NormalEnemySpeed);
+
+                // record usage to avoid immediate reuse
+                RecordSpawnAtPoint(free);
+            }
+
+            float jitter = (float)(rnd.NextDouble() * (spawnInterval * 0.5));
+            yield return new WaitForSeconds(Mathf.Max(0.02f, spawnInterval + jitter));
+            timer += spawnInterval;
+        }
+
+        // Horde finished
+        bonusHordeActive = false;
+        bonusHordeCoroutine = null;
+        lastHordeEndTime = Time.time;
+
+        // Restart main spawn loop
+        if (spawnCoroutine != null) { StopCoroutine(spawnCoroutine); spawnCoroutine = null; }
+        spawnCoroutine = StartCoroutine(SpawnRoutine());
+    }
+
     // LOOP PRINCIPAL
     private IEnumerator SpawnRoutine()
     {
@@ -224,6 +324,19 @@ public class EnemySpawner : MonoBehaviour
 
         while (isSpawning)
         {
+            // If any bonus object is present in the world, pause normal spawning/patterns
+            while (HasAnyActiveBonusObject() || bonusHordeActive)
+            {
+                yield return null; // wait until bonuses cleared / horde finished
+            }
+
+            // Respect a cooldown after a horde ended to avoid immediate spawn too near
+            if (Time.time - lastHordeEndTime < hordeEndCooldown)
+            {
+                yield return null;
+                continue;
+            }
+
             if (frenzyMode)
             {
                 SpawnEnemyFromPoolAtRandomPoint(HorseSkillEnemySpeed);
@@ -264,8 +377,13 @@ public class EnemySpawner : MonoBehaviour
             yield break;
         }
 
-        int point = Random.Range(0, spawnPoints.Length);
-        Transform p = spawnPoints[point];
+        // find a free spawn point for the whole pattern; if none, skip this pattern
+        Transform p = GetRandomFreeSpawnPoint();
+        if (p == null)
+        {
+            isSpawningPattern = false;
+            yield break;
+        }
 
         int count = Random.Range(2, 5);
         float stagger = 0.9f;
@@ -274,6 +392,22 @@ public class EnemySpawner : MonoBehaviour
 
         for (int i = 0; i < count; i++)
         {
+            // if a bonus appears meanwhile, abort pattern
+            if (HasAnyActiveBonusObject() || bonusHordeActive) break;
+
+            // Before spawning, ensure the point is still free (not taken by another spawn)
+            if (!IsSpawnPointFree(p))
+            {
+                // try to find another free point for the remainder of the pattern
+                Transform alt = GetRandomFreeSpawnPoint();
+                if (alt == null)
+                {
+                    // no free point available - abort pattern
+                    break;
+                }
+                p = alt;
+            }
+
             GameObject go = SpawnFromPool(prefab, p.position, Quaternion.identity);
 
             var runner = go.GetComponent<RunnerEnemy>();
@@ -282,6 +416,9 @@ public class EnemySpawner : MonoBehaviour
                 float speed = frenzyMode ? HorseSkillEnemySpeed : NormalEnemySpeed;
                 runner.SetFallSpeed(speed);
             }
+
+            // record usage to avoid immediate reuse
+            RecordSpawnAtPoint(p);
 
             yield return new WaitForSeconds(stagger);
         }
@@ -308,23 +445,144 @@ public class EnemySpawner : MonoBehaviour
     {
         if (enemyPrefabs.Count == 0 || spawnPoints.Length == 0) return;
 
-        GameObject prefab = enemyPrefabs[Random.Range(0, enemyPrefabs.Count)];
-        Transform sp = spawnPoints[Random.Range(0, spawnPoints.Length)];
+        Transform free = GetRandomFreeSpawnPoint();
+        if (free == null) return; // no free spot, skip
 
-        GameObject go = SpawnFromPool(prefab, sp.position, Quaternion.identity);
+        GameObject prefab = enemyPrefabs[Random.Range(0, enemyPrefabs.Count)];
+        GameObject go = SpawnFromPool(prefab, free.position, Quaternion.identity);
 
         var runner = go.GetComponent<RunnerEnemy>();
         runner?.SetFallSpeed(speed > 0f ? speed : NormalEnemySpeed);
+
+        RecordSpawnAtPoint(free);
     }
 
     private void SpawnBonus()
     {
+        // Check min interval
+        if (Time.time - lastBonusSpawnTime < minBonusInterval) return;
+
+        // Do not spawn if a Bonus is already active (effect) or a bonus object exists
+        if (BonusManager.Instance != null && BonusManager.Instance.IsBonusActive()) return;
+        if (HasAnyActiveBonusObject()) return;
+
         if (bonusPrefabs.Count == 0 || spawnPoints.Length == 0) return;
 
-        GameObject prefab = bonusPrefabs[Random.Range(0, bonusPrefabs.Count)];
-        Transform sp = spawnPoints[Random.Range(0, spawnPoints.Length)];
+        // Find a free spawn point (not occupied by active enemy/bonus)
+        Transform free = GetRandomFreeSpawnPoint();
+        if (free == null)
+        {
+            // No free spawn point available, skip this spawn
+            return;
+        }
 
-        SpawnFromPool(prefab, sp.position, Quaternion.identity);
+        GameObject prefab = bonusPrefabs[Random.Range(0, bonusPrefabs.Count)];
+
+        SpawnFromPool(prefab, free.position, Quaternion.identity);
+
+        // record usage
+        RecordSpawnAtPoint(free);
+
+        lastBonusSpawnTime = Time.time;
+    }
+
+    // New helper: find a random spawn point that is free (no active pooled object within radius and not recently used)
+    private Transform GetRandomFreeSpawnPoint()
+    {
+        if (spawnPoints == null || spawnPoints.Length == 0) return null;
+
+        int[] indices = new int[spawnPoints.Length];
+        for (int i = 0; i < indices.Length; i++) indices[i] = i;
+
+        // Fisher-Yates shuffle
+        for (int i = indices.Length - 1; i > 0; i--)
+        {
+            int j = Random.Range(0, i + 1);
+            int tmp = indices[i]; indices[i] = indices[j]; indices[j] = tmp;
+        }
+
+        foreach (int idx in indices)
+        {
+            Transform sp = spawnPoints[idx];
+            if (sp == null) continue;
+            if (IsSpawnPointFree(sp)) return sp;
+        }
+
+        return null;
+    }
+
+    // Returns true if there is any active bonus prefab instance in the world (pool)
+    private bool HasAnyActiveBonusObject()
+    {
+        if (bonusPrefabs == null || bonusPrefabs.Count == 0) return false;
+
+        foreach (var prefab in bonusPrefabs)
+        {
+            if (prefab == null) continue;
+            if (!pools.ContainsKey(prefab)) continue;
+            var list = pools[prefab];
+            if (list == null) continue;
+            foreach (var go in list)
+            {
+                if (go == null) continue;
+                if (go.activeInHierarchy) return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool IsSpawnPointFree(Transform sp)
+    {
+        Vector3 pos = sp.position;
+
+        // Check cooldown
+        if (spawnPointLastUsed.TryGetValue(sp, out float last))
+        {
+            if (Time.time - last < spawnPointCooldown)
+                return false;
+        }
+
+        // Check all pooled objects to see if any active one is near this position
+        foreach (var kv in pools)
+        {
+            var list = kv.Value;
+            if (list == null) continue;
+            foreach (var go in list)
+            {
+                if (go == null) continue;
+                if (!go.activeInHierarchy) continue;
+
+                // If the active object is close to spawn point, consider it occupied
+                if (Vector3.Distance(go.transform.position, pos) <= spawnPointBlockRadius)
+                    return false;
+            }
+        }
+
+        return true;
+    }
+
+    private void RecordSpawnAtPoint(Transform sp)
+    {
+        if (sp == null) return;
+        if (!spawnPointLastUsed.ContainsKey(sp)) spawnPointLastUsed[sp] = -Mathf.Infinity;
+        spawnPointLastUsed[sp] = Time.time;
+    }
+
+    // New API: spawn a single random enemy immediately with specific speed
+    public void SpawnRandomEnemyImmediate(float speed = -1f)
+    {
+        if (enemyPrefabs.Count == 0 || spawnPoints.Length == 0) return;
+
+        Transform free = GetRandomFreeSpawnPoint();
+        if (free == null) return;
+
+        GameObject prefab = enemyPrefabs[Random.Range(0, enemyPrefabs.Count)];
+        GameObject go = SpawnFromPool(prefab, free.position, Quaternion.identity);
+        var runner = go.GetComponent<RunnerEnemy>();
+        runner?.SetFallSpeed(speed > 0f ? speed : NormalEnemySpeed);
+
+        RecordSpawnAtPoint(free);
     }
 
     // UTILS

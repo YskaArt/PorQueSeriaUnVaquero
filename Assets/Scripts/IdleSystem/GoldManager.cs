@@ -145,7 +145,15 @@ public class GoldManager : MonoBehaviour
             goldText.text = FormatNumber(gold);
 
         if (goldPerSecondText != null)
-            goldPerSecondText.text = FormatNumber(goldPerSecond) + " Gps";
+        {
+            // Mostrar el texto del GPS sólo si es mayor que 0
+            bool shouldShow = Math.Abs(goldPerSecond) > double.Epsilon && goldPerSecond > 0.0;
+            if (goldPerSecondText.gameObject.activeSelf != shouldShow)
+                goldPerSecondText.gameObject.SetActive(shouldShow);
+
+            if (shouldShow)
+                goldPerSecondText.text = FormatNumber(goldPerSecond) + " Gps";
+        }
     }
 
     public static string FormatNumber(double number)
