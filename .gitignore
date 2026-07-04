@@ -64,6 +64,11 @@ sysinfo.txt
 *.unitypackage.meta
 *.app
 
+# Android signing keys - NUNCA subir al repo (rotar la key si ya se filtró)
+*.keystore
+*.jks
+keystore.properties
+
 # Crashlytics generated file
 crashlytics-build.properties
 
