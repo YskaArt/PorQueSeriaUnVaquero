@@ -161,6 +161,8 @@ public class MiniGameController : MonoBehaviour
 
         Debug.Log("[MiniGame] Boss derrotado. Iniciando cierre y cambio de nivel...");
 
+        DailyMissionManager.Instance?.ReportProgress(MissionType.DefeatBoss, 1);
+
         if (activeBossController != null)
         {
             activeBossController.ClearDeathCallback();

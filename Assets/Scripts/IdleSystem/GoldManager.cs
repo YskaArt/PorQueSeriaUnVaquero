@@ -1,7 +1,7 @@
 /*
  * GoldManager
  * -----------
- * Sistema central de administraciÛn del oro en el juego.
+ * Sistema central de administraciÔøΩn del oro en el juego.
  *
  * FUNCIONAMIENTO GENERAL:
  * - Singleton persistente entre escenas (DontDestroyOnLoad).
@@ -14,22 +14,22 @@
  * - Actualiza el texto de oro y GPS con un intervalo fijo (uiUpdateInterval)
  *   para evitar refrescar la UI cada frame.
  * - Si las referencias de UI no existen al cargar una escena, intenta reasignarlas
- *   autom·ticamente mediante b˙squeda por tag o por nombre.
+ *   automÔøΩticamente mediante bÔøΩsqueda por tag o por nombre.
  *
- * M…TODOS PRINCIPALES:
- * - AddGold(amount): suma oro instant·neo (ej: enemigos muertos).
+ * MÔøΩTODOS PRINCIPALES:
+ * - AddGold(amount): suma oro instantÔøΩneo (ej: enemigos muertos).
  * - SpendGold(amount): resta oro si hay suficiente; devuelve true/false.
  * - AddGoldPerSecond(amount): incrementa la ganancia pasiva.
  * - SetGoldPerSecond(value): asigna nuevo GPS directo.
- * - FormatNumber(number): compacta n˙meros grandes (K, M, B, etc.).
+ * - FormatNumber(number): compacta nÔøΩmeros grandes (K, M, B, etc.).
  *
  * PERSISTENCIA Y ESCENAS:
  * - Usa SceneManager.sceneLoaded para restaurar referencias al cambiar de escena.
  * - Colabora con GameSaveManager para aplicar datos previamente cargados.
  *
- * RESPONSABILIDAD ⁄NICA:
+ * RESPONSABILIDAD ÔøΩNICA:
  * - Este manager es la autoridad del oro y del GPS en todo el juego.
- * - Ning˙n otro sistema deberÌa modificar el oro directamente.
+ * - NingÔøΩn otro sistema deberÔøΩa modificar el oro directamente.
  */
 
 using System;
@@ -52,8 +52,20 @@ public class GoldManager : MonoBehaviour
     [SerializeField] private float uiUpdateInterval = 0.1f;
     private float uiUpdateTimer = 0f;
 
+    // Oro total ganado en la run actual (se reinicia con el prestigio).
+    // Lo usa MasteryManager para calcular los puntos de maestr√≠a a otorgar.
+    private double lifetimeGoldThisRun;
+
+    // Multiplicadores externos sobre TODO el oro ganado (no afectan gastos ni cargas de save).
+    // masteryMultiplier: bonificaci√≥n permanente por puntos de maestr√≠a.
+    // boostMultiplier: boosts temporales de la tienda.
+    private double masteryMultiplier = 1.0;
+    private double boostMultiplier = 1.0;
+
     public double CurrentGold => gold;
     public double CurrentGoldPerSecond => goldPerSecond;
+    public double LifetimeGoldThisRun => lifetimeGoldThisRun;
+    public double TotalEarningsMultiplier => masteryMultiplier * boostMultiplier;
 
     private void Awake()
     {
@@ -90,7 +102,12 @@ public class GoldManager : MonoBehaviour
     private void Update()
     {
         if (Math.Abs(goldPerSecond) > double.Epsilon)
-            gold += goldPerSecond * Time.deltaTime;
+        {
+            double earned = goldPerSecond * TotalEarningsMultiplier * Time.deltaTime;
+            gold += earned;
+            if (earned > 0)
+                RegisterEarnings(earned);
+        }
 
         uiUpdateTimer += Time.deltaTime;
         if (uiUpdateTimer >= uiUpdateInterval)
@@ -103,9 +120,52 @@ public class GoldManager : MonoBehaviour
 
     public void AddGold(double amount)
     {
+        if (amount > 0)
+        {
+            amount *= TotalEarningsMultiplier;
+            RegisterEarnings(amount);
+        }
+
         gold += amount;
         UpdateGoldUI();
         OnGoldChanged?.Invoke();
+    }
+
+    // Registra oro ganado para maestr√≠a y misiones. Solo ganancias reales,
+    // nunca cargas de save (esas entran por SetGold).
+    private void RegisterEarnings(double earned)
+    {
+        lifetimeGoldThisRun += earned;
+        DailyMissionManager.Instance?.ReportProgress(MissionType.EarnGold, earned);
+    }
+
+    /// <summary>
+    /// Asigna el oro directamente, sin multiplicadores ni registro de ganancias.
+    /// Uso exclusivo de GameSaveManager (carga de save y resets).
+    /// </summary>
+    public void SetGold(double value)
+    {
+        gold = value;
+        UpdateGoldUI();
+        OnGoldChanged?.Invoke();
+    }
+
+    /// <summary>Restaura el acumulado de la run desde el save (o 0 en resets).</summary>
+    public void SetLifetimeGoldThisRun(double value)
+    {
+        lifetimeGoldThisRun = Math.Max(0, value);
+    }
+
+    public void SetMasteryMultiplier(double multiplier)
+    {
+        masteryMultiplier = Math.Max(1.0, multiplier);
+        UpdateGoldUI();
+    }
+
+    public void SetBoostMultiplier(double multiplier)
+    {
+        boostMultiplier = Math.Max(1.0, multiplier);
+        UpdateGoldUI();
     }
 
     public void AddGoldPerSecond(double amount)
@@ -146,13 +206,16 @@ public class GoldManager : MonoBehaviour
 
         if (goldPerSecondText != null)
         {
-            // Mostrar el texto del GPS sÛlo si es mayor que 0
+            // Mostrar el texto del GPS sÔøΩlo si es mayor que 0
             bool shouldShow = Math.Abs(goldPerSecond) > double.Epsilon && goldPerSecond > 0.0;
             if (goldPerSecondText.gameObject.activeSelf != shouldShow)
                 goldPerSecondText.gameObject.SetActive(shouldShow);
 
             if (shouldShow)
-                goldPerSecondText.text = FormatNumber(goldPerSecond) + " Gps";
+            {
+                // Mostrar el GPS efectivo (con maestr√≠a y boosts aplicados)
+                goldPerSecondText.text = FormatNumber(goldPerSecond * TotalEarningsMultiplier) + " Gps";
+            }
         }
     }
 

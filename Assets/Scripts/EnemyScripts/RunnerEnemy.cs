@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------
 // Controla el comportamiento de los enemigos que caen por la pantalla.
 // - Se mueven hacia abajo usando fallSpeed.
-// - Se eliminan automáticamente al pasar cierto límite o agotarse su lifetime.
+// - Se eliminan automï¿½ticamente al pasar cierto lï¿½mite o agotarse su lifetime.
 // - Al ser eliminados por el jugador, otorgan oro mediante GoldManager.
 // - Trabaja con object pooling: OnSpawn() reinicia su estado y ReturnToPool()
 //   simplemente desactiva el objeto.
@@ -50,6 +50,8 @@ public class RunnerEnemy : MonoBehaviour, IPoolResettable
 
             GoldManager.Instance.AddGold(reward);
         }
+
+        DailyMissionManager.Instance?.ReportProgress(MissionType.KillEnemies, 1);
 
         ReturnToPool();
     }
