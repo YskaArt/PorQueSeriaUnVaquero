@@ -10,15 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 52246123c94e16d4fbab69feb83aaade, type: 3}
-  m_Name: 11EleventhUpgrade
+  m_Name: 13_Dynamite
   m_EditorClassIdentifier: 
-  upgradeName: Silver Spurs
-  baseCost: 4600000000000
+  upgradeName: Dynamite
+  baseCost: 1.5e+17
   costMultiplier: 1.35
   currentLevel: 0
   hasBonus: 0
   bonusInterval: 50
-  bonusCost: 5000000000000000
+  bonusCost: 1e+21
   bonusMultiplierPerBonus: 1.55
   bonusCount: 0
-  gpsPerLevel: 1020000000
+  gpsPerLevel: 260000000000000

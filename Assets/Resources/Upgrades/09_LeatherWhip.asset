@@ -10,15 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 52246123c94e16d4fbab69feb83aaade, type: 3}
-  m_Name: 18EighteenthUpgrade
+  m_Name: 09_LeatherWhip
   m_EditorClassIdentifier: 
-  upgradeName: Sheriff's badge
-  baseCost: 5e+61
-  costMultiplier: 1.35
+  upgradeName: Leather Whip
+  baseCost: 5400000000
+  costMultiplier: 1.31
   currentLevel: 0
   hasBonus: 0
   bonusInterval: 50
-  bonusCost: 5e+64
+  bonusCost: 7650000000000
   bonusMultiplierPerBonus: 1.55
   bonusCount: 0
-  gpsPerLevel: 5e+34
+  gpsPerLevel: 1000000

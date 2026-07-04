@@ -10,15 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 52246123c94e16d4fbab69feb83aaade, type: 3}
-  m_Name: 12TwelfthUpgrade
+  m_Name: 01_CowboyHat
   m_EditorClassIdentifier: 
-  upgradeName: Bolt Action Rifle
-  baseCost: 220000000000000
-  costMultiplier: 1.35
-  currentLevel: 0
+  upgradeName: Cowboy Hat
+  baseCost: 6
+  costMultiplier: 1.15
+  currentLevel: 50
   hasBonus: 0
   bonusInterval: 50
-  bonusCost: 2.5e+17
+  bonusCost: 25000
   bonusMultiplierPerBonus: 1.55
-  bonusCount: 0
-  gpsPerLevel: 115000000000
+  bonusCount: 1
+  gpsPerLevel: 0.1

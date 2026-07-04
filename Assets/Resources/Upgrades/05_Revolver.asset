@@ -10,15 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 52246123c94e16d4fbab69feb83aaade, type: 3}
-  m_Name: 7SeventhUpgrade
+  m_Name: 05_Revolver
   m_EditorClassIdentifier: 
-  upgradeName: Leather Gloves
-  baseCost: 14000000
-  costMultiplier: 1.31
+  upgradeName: Revolver
+  baseCost: 120000
+  costMultiplier: 1.2
   currentLevel: 0
   hasBonus: 0
   bonusInterval: 50
-  bonusCost: 25200000000
+  bonusCost: 345000000
   bonusMultiplierPerBonus: 1.55
   bonusCount: 0
-  gpsPerLevel: 35000
+  gpsPerLevel: 500
