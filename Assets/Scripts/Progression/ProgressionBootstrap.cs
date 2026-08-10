@@ -23,6 +23,7 @@ public static class ProgressionBootstrap
         go.AddComponent<DailyMissionManager>();
         go.AddComponent<ZoneMissionManager>();
         go.AddComponent<ShopManager>();
+        go.AddComponent<OfflineEarningsManager>();
         Object.DontDestroyOnLoad(go);
 
         Debug.Log("[ProgressionBootstrap] ProgressionSystems creado.");

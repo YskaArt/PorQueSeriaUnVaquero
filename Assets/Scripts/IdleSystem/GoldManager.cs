@@ -85,6 +85,7 @@ public class GoldManager : MonoBehaviour
     private void Start()
     {
         GameSaveManager.Instance?.ApplyLoadedDataToManagers();
+        OfflineEarningsManager.Instance?.CheckForOfflineEarnings();
         UpdateGoldUI();
     }
 

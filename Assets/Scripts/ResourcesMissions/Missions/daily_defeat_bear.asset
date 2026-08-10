@@ -19,5 +19,5 @@ MonoBehaviour:
   targetMinutesOfGPS: 0
   enemyTypeFilter: Bear
   rewardFlatGold: 0
-  rewardMinutesOfGPS: 30
+  rewardMinutesOfGPS: 35
   rewardMasteryPoints: 0

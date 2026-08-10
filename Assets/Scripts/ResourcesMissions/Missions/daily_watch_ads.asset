@@ -19,5 +19,5 @@ MonoBehaviour:
   targetMinutesOfGPS: 0
   enemyTypeFilter: 
   rewardFlatGold: 0
-  rewardMinutesOfGPS: 30
+  rewardMinutesOfGPS: 15
   rewardMasteryPoints: 0
