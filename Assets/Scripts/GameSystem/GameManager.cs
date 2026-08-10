@@ -69,14 +69,14 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator InitializeGame()
     {
-        ApplyLevel(currentLevelIndex);
+        ApplyLevel(currentLevelIndex, isNewEntry: false);
         yield return null;
         yield return FadeIn();
         yield return ShowWelcomeMessage();
     }
 
     // ================== APLICAR NIVEL ==================
-    public void ApplyLevel(int index)
+    public void ApplyLevel(int index, bool isNewEntry = true)
     {
         if (levels == null || levels.Count == 0)
         {
@@ -103,6 +103,9 @@ public class GameManager : MonoBehaviour
         }
 
         ReassignDynamicReferences(activeScroller, spawner);
+
+        // Misiones de zona: set nuevo si es un cambio real, o restaurar el guardado si es un resume.
+        ZoneMissionManager.Instance?.OnZoneEntered(currentLevelIndex, isNewEntry);
 
         Debug.Log($"[GameManager] Nivel aplicado: {currentLevel?.levelName ?? currentLevelIndex.ToString()}");
 

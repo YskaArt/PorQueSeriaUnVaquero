@@ -1,14 +1,14 @@
-/*
+ï»¿/*
     MiniBossController
     ------------------
     Controla por completo el comportamiento del MiniBoss, incluyendo:
     - Movimiento interpolado hacia posiciones objetivo.
     - Sistema de vida basado en cantidad de golpes.
-    - Actualización de barra de vida.
-    - Animaciones de caminar, recibir daño y morir.
-    - Desactivación de colisiones al morir.
-    - Invocación de un callback externo cuando el MiniBoss muere (usado por el MiniGameController).
-    - Destrucción automática del objeto una vez completada la animación de muerte.
+    - Actualizaciï¿½n de barra de vida.
+    - Animaciones de caminar, recibir daï¿½o y morir.
+    - Desactivaciï¿½n de colisiones al morir.
+    - Invocaciï¿½n de un callback externo cuando el MiniBoss muere (usado por el MiniGameController).
+    - Destrucciï¿½n automï¿½tica del objeto una vez completada la animaciï¿½n de muerte.
 */
 
 using System;
@@ -19,16 +19,23 @@ using UnityEngine.UI;
 [RequireComponent(typeof(Animator))]
 public class MiniBossController : MonoBehaviour
 {
+    [Header("Identidad (para misiones diarias)")]
+    [Tooltip("Id unico de este jefe " +
+             "Se usa para misiones de tipo 'derrotar N veces a este jefe'. Dejar vacio = jefe generico.")]
+    [SerializeField] private string bossId = "";
+
     [Header("Anim & UI")]
     [SerializeField] private Animator anim;
     [SerializeField] private Image healthBar;
 
-    [Header("Vida / daño")]
+    [Header("Vida / daï¿½o")]
     [SerializeField] private int totalHits = 10;
     [SerializeField] private float deathDelay = 0.9f;
 
     private int currentHits = 0;
     private bool isDead = false;
+
+    public string BossId => bossId;
 
     private Coroutine moveRoutine;
     private Action onDeath;
@@ -64,7 +71,7 @@ public class MiniBossController : MonoBehaviour
     }
 
     // -------------------------
-    // DAÑO / MUERTE
+    // DAï¿½O / MUERTE
     // -------------------------
     public void TakeDamage()
     {
