@@ -111,6 +111,9 @@ public class GameSaveManager : MonoBehaviour
             dailyMissions = DailyMissionManager.Instance != null
                           ? DailyMissionManager.Instance.GetSaveData()
                           : (loadedData != null ? loadedData.dailyMissions : null),
+            zoneMissions = ZoneMissionManager.Instance != null
+                          ? ZoneMissionManager.Instance.GetSaveData()
+                          : (loadedData != null ? loadedData.zoneMissions : null),
             activeBoost = ShopManager.Instance != null
                         ? ShopManager.Instance.GetBoostSaveData()
                         : (loadedData != null ? loadedData.activeBoost : null)
@@ -358,6 +361,7 @@ public class GameSaveManager : MonoBehaviour
         // (Va antes de reinicializar loadedData: ResetAll puede disparar un SaveGame interno.)
         MasteryManager.Instance?.ResetAll();
         DailyMissionManager.Instance?.ResetAll();
+        ZoneMissionManager.Instance?.ResetAll();
         ShopManager.Instance?.ResetAll();
 
         // Reinicializar loadedData en memoria para que GetSavedLevelIndex() devuelva 0
@@ -418,6 +422,7 @@ public class GameSaveData
     public int masteryPoints;
     public int prestigeCount;
     public DailyMissionsSaveData dailyMissions;
+    public ZoneMissionsSaveData zoneMissions;
     public BoostSaveData activeBoost;
 }
 
@@ -425,6 +430,13 @@ public class GameSaveData
 public class DailyMissionsSaveData
 {
     public string dateKey; // "yyyyMMdd" del día al que pertenecen las misiones
+    public List<MissionProgressData> missions = new List<MissionProgressData>();
+}
+
+[Serializable]
+public class ZoneMissionsSaveData
+{
+    public int zoneIndex = -1; // índice de LevelData al que pertenecen estas misiones
     public List<MissionProgressData> missions = new List<MissionProgressData>();
 }
 

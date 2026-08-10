@@ -14,11 +14,18 @@ using static EnemySpawner;
 
 public class RunnerEnemy : MonoBehaviour, IPoolResettable
 {
+    [Header("Identidad (para misiones diarias)")]
+    [Tooltip("Id único del tipo de enemigo (ej: \"Boxer\", \"Skeleton\", \"Slime\"). " +
+             "Se usa para misiones de tipo 'eliminar N de este enemigo'. Dejar vacío = enemigo genérico.")]
+    [SerializeField] private string enemyTypeId = "";
+
     [SerializeField] private float fallSpeed = 5f;
     [SerializeField] private float minY = -25f;
     [SerializeField] private float lifetime = 10f;
 
     private float lifetimeTimer;
+
+    public string EnemyTypeId => enemyTypeId;
 
     void Start()
     {
@@ -51,7 +58,8 @@ public class RunnerEnemy : MonoBehaviour, IPoolResettable
             GoldManager.Instance.AddGold(reward);
         }
 
-        DailyMissionManager.Instance?.ReportProgress(MissionType.KillEnemies, 1);
+        DailyMissionManager.Instance?.ReportProgress(MissionType.KillEnemies, 1, enemyTypeId);
+        ZoneMissionManager.Instance?.ReportProgress(MissionType.KillEnemies, 1, enemyTypeId);
 
         ReturnToPool();
     }
