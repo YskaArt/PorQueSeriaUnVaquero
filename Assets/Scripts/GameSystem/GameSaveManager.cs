@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 
 ///
@@ -11,7 +12,8 @@ using UnityEngine;
 /// - Guarda oro, niveles de upgrades, cooldowns y escena actual.
 /// - Carga los datos y aplica los niveles directamente a cada UpgradeBase mediante ApplyLoadedState().
 /// - Recalcula GPS después de cargar.
-/// - Mantiene persistencia usando PlayerPrefs y JSON.
+/// - Persiste en un archivo JSON en Application.persistentDataPath (savegame.json).
+///   Si existe un save viejo en PlayerPrefs, se migra automáticamente la primera vez.
 /// - Garantiza que la carga se aplique antes de que otros managers empiecen a funcionar.
 ///
 
@@ -22,9 +24,18 @@ public class GameSaveManager : MonoBehaviour
     [Header("Inspector fallback (opcional)")]
     [SerializeField] private UpgradeBase[] allUpgrades;
 
-    private const string SaveKey = "IdleGameSave";
+    // Clave del save viejo en PlayerPrefs; solo se usa para migrar y limpiar.
+    private const string LegacySaveKey = "IdleGameSave";
+    private const string SaveFileName = "savegame.json";
+
     private GameSaveData loadedData;
     private UpgradeBase[] allUpgradesCache;
+
+    public static string SaveFilePath => Path.Combine(Application.persistentDataPath, SaveFileName);
+
+    // Estado cargado del save. Los managers (Maestría, Misiones, Tienda) lo leen
+    // en su Start para restaurar su estado. Puede ser null si aún no se cargó.
+    public GameSaveData LoadedData => loadedData;
 
     private void Awake()
     {
@@ -87,7 +98,22 @@ public class GameSaveManager : MonoBehaviour
             horseCooldownRemaining = HorseCooldownManager.Instance != null
                                    ? HorseCooldownManager.Instance.GetRemainingCooldown()
                                    : 0f,
-            lastSaveTimestamp = DateTime.Now.ToBinary()
+            lastSaveTimestamp = DateTime.Now.ToBinary(),
+
+            // Progresión (si el manager todavía no existe, conservar lo cargado)
+            lifetimeGoldThisRun = GoldManager.Instance.LifetimeGoldThisRun,
+            masteryPoints = MasteryManager.Instance != null
+                          ? MasteryManager.Instance.MasteryPoints
+                          : (loadedData != null ? loadedData.masteryPoints : 0),
+            prestigeCount = MasteryManager.Instance != null
+                          ? MasteryManager.Instance.PrestigeCount
+                          : (loadedData != null ? loadedData.prestigeCount : 0),
+            dailyMissions = DailyMissionManager.Instance != null
+                          ? DailyMissionManager.Instance.GetSaveData()
+                          : (loadedData != null ? loadedData.dailyMissions : null),
+            activeBoost = ShopManager.Instance != null
+                        ? ShopManager.Instance.GetBoostSaveData()
+                        : (loadedData != null ? loadedData.activeBoost : null)
         };
 
         foreach (var upgrade in GetAllUpgrades())
@@ -102,23 +128,74 @@ public class GameSaveManager : MonoBehaviour
         }
 
         string json = JsonUtility.ToJson(saveData);
-        PlayerPrefs.SetString(SaveKey, json);
-        PlayerPrefs.Save();
+        WriteSaveFile(json);
+
+        // Mantener loadedData en sync con lo último guardado
+        loadedData = saveData;
 
         Debug.Log("[GameSaveManager] Juego guardado: " + json);
+    }
+
+    // Escritura "segura": primero a un .tmp y después se reemplaza el archivo real,
+    // para no corromper el save si la app muere a mitad de la escritura.
+    private void WriteSaveFile(string json)
+    {
+        try
+        {
+            string tmpPath = SaveFilePath + ".tmp";
+            File.WriteAllText(tmpPath, json);
+
+            if (File.Exists(SaveFilePath))
+                File.Delete(SaveFilePath);
+            File.Move(tmpPath, SaveFilePath);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError("[GameSaveManager] Error escribiendo el save: " + ex);
+        }
+    }
+
+    // Lee el JSON del save. Prioridad: archivo nuevo -> PlayerPrefs viejo (migración) -> null.
+    private string ReadSaveJson()
+    {
+        try
+        {
+            if (File.Exists(SaveFilePath))
+                return File.ReadAllText(SaveFilePath);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError("[GameSaveManager] Error leyendo el save: " + ex);
+        }
+
+        // Migración desde el save viejo en PlayerPrefs (versiones <= 1.0)
+        if (PlayerPrefs.HasKey(LegacySaveKey))
+        {
+            string legacyJson = PlayerPrefs.GetString(LegacySaveKey);
+            if (!string.IsNullOrEmpty(legacyJson))
+            {
+                Debug.Log("[GameSaveManager] Migrando save viejo de PlayerPrefs a archivo.");
+                WriteSaveFile(legacyJson);
+                PlayerPrefs.DeleteKey(LegacySaveKey);
+                PlayerPrefs.Save();
+                return legacyJson;
+            }
+        }
+
+        return null;
     }
 
     // ================== LOAD ==================
     public void LoadGame()
     {
-        if (!PlayerPrefs.HasKey(SaveKey))
+        string json = ReadSaveJson();
+        if (string.IsNullOrEmpty(json))
         {
             Debug.Log("[GameSaveManager] No hay datos guardados.");
             loadedData = new GameSaveData(); // inicializar vacío para evitar null checks
             return;
         }
 
-        string json = PlayerPrefs.GetString(SaveKey);
         loadedData = JsonUtility.FromJson<GameSaveData>(json);
 
         if (loadedData == null)
@@ -160,7 +237,10 @@ public class GameSaveManager : MonoBehaviour
 
         // Aplicar oro y cooldown (si managers ya existen)
         if (GoldManager.Instance != null)
-            GoldManager.Instance.AddGold(loadedData.gold - GoldManager.Instance.CurrentGold);
+        {
+            GoldManager.Instance.SetGold(loadedData.gold);
+            GoldManager.Instance.SetLifetimeGoldThisRun(loadedData.lifetimeGoldThisRun);
+        }
 
         if (HorseCooldownManager.Instance != null)
             HorseCooldownManager.Instance.SetRemainingCooldown(loadedData.horseCooldownRemaining);
@@ -174,7 +254,10 @@ public class GameSaveManager : MonoBehaviour
         if (loadedData == null) return;
 
         if (GoldManager.Instance != null)
-            GoldManager.Instance.AddGold(loadedData.gold - GoldManager.Instance.CurrentGold);
+        {
+            GoldManager.Instance.SetGold(loadedData.gold);
+            GoldManager.Instance.SetLifetimeGoldThisRun(loadedData.lifetimeGoldThisRun);
+        }
 
         double totalGPS = 0;
         foreach (var u in GetAllUpgrades())
@@ -214,8 +297,9 @@ public class GameSaveManager : MonoBehaviour
         return 0;
     }
 
-    // ================== RESET ==================
-    public void ResetGame()
+    // Reinicia todo el progreso de la run actual: upgrades, oro, GPS y cooldowns.
+    // Es la parte compartida entre el reset total y el prestigio.
+    private void ResetRunState()
     {
         // 1) Resetear todos los upgrades a 0 (esto también disparará OnLevelChanged en los SOs)
         var upgrades = GetAllUpgrades();
@@ -230,23 +314,53 @@ public class GameSaveManager : MonoBehaviour
             }
         }
 
-        // 2) Resetear oro y GPS en GoldManager
+        // 2) Resetear oro, acumulado de la run y GPS en GoldManager
         if (GoldManager.Instance != null)
         {
-            // Restar todo el oro actual para dejar en 0
-            double currentGold = GoldManager.Instance.CurrentGold;
-            if (currentGold != 0)
-                GoldManager.Instance.AddGold(-currentGold);
-
-            // Poner GPS a 0
+            GoldManager.Instance.SetGold(0);
+            GoldManager.Instance.SetLifetimeGoldThisRun(0);
             GoldManager.Instance.SetGoldPerSecond(0.0);
         }
 
         // 3) Resetear cooldown del caballo
         if (HorseCooldownManager.Instance != null)
             HorseCooldownManager.Instance.SetRemainingCooldown(0f);
+    }
 
-        // 4) Reinicializar loadedData en memoria para que GetSavedLevelIndex() devuelva 0
+    /// <summary>
+    /// Reset por PRESTIGIO (Maestría): reinicia la run (upgrades, oro, nivel)
+    /// pero conserva puntos de maestría, misiones diarias y tutorial.
+    /// MasteryManager es quien suma los puntos ANTES de llamar a esto.
+    /// </summary>
+    public void ResetRunProgress()
+    {
+        ResetRunState();
+
+        if (loadedData == null) loadedData = new GameSaveData();
+        loadedData.gold = 0;
+        loadedData.lifetimeGoldThisRun = 0;
+        loadedData.upgrades = new List<UpgradeSaveData>();
+        loadedData.currentLevelIndex = 0;
+        loadedData.timeBeforeMiniGame = 0f;
+        loadedData.horseCooldownRemaining = 0f;
+
+        SaveGame();
+
+        Debug.Log("[GameSaveManager] Run reiniciada por prestigio (maestría conservada).");
+    }
+
+    // ================== RESET ==================
+    public void ResetGame()
+    {
+        ResetRunState();
+
+        // El reset total también borra la maestría, misiones y boosts en memoria.
+        // (Va antes de reinicializar loadedData: ResetAll puede disparar un SaveGame interno.)
+        MasteryManager.Instance?.ResetAll();
+        DailyMissionManager.Instance?.ResetAll();
+        ShopManager.Instance?.ResetAll();
+
+        // Reinicializar loadedData en memoria para que GetSavedLevelIndex() devuelva 0
         loadedData = new GameSaveData
         {
             gold = 0,
@@ -258,8 +372,18 @@ public class GameSaveManager : MonoBehaviour
             lastSaveTimestamp = 0
         };
 
-        // 5) Borrar el save en PlayerPrefs (y escribir el estado limpio opcionalmente)
-        PlayerPrefs.DeleteKey(SaveKey);
+        // 5) Borrar el archivo de save (y la clave legacy de PlayerPrefs por las dudas)
+        try
+        {
+            if (File.Exists(SaveFilePath))
+                File.Delete(SaveFilePath);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError("[GameSaveManager] Error borrando el save: " + ex);
+        }
+
+        PlayerPrefs.DeleteKey(LegacySaveKey);
         PlayerPrefs.DeleteKey("TutorialSeen");
         PlayerPrefs.Save();
 
@@ -288,6 +412,36 @@ public class GameSaveData
     public float timeBeforeMiniGame;
     public float horseCooldownRemaining;
     public long lastSaveTimestamp;
+
+    // --- Progresión (maestría / misiones / tienda) ---
+    public double lifetimeGoldThisRun; // oro total ganado en la run actual
+    public int masteryPoints;
+    public int prestigeCount;
+    public DailyMissionsSaveData dailyMissions;
+    public BoostSaveData activeBoost;
+}
+
+[Serializable]
+public class DailyMissionsSaveData
+{
+    public string dateKey; // "yyyyMMdd" del día al que pertenecen las misiones
+    public List<MissionProgressData> missions = new List<MissionProgressData>();
+}
+
+[Serializable]
+public class MissionProgressData
+{
+    public string missionId;
+    public double progress;
+    public double resolvedTarget; // objetivo resuelto al asignar la misión (para targets que escalan con GPS)
+    public bool claimed;
+}
+
+[Serializable]
+public class BoostSaveData
+{
+    public double multiplier = 1.0;
+    public float remainingSeconds;
 }
 
 [Serializable]

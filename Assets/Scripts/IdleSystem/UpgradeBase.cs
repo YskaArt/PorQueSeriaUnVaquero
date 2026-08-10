@@ -3,8 +3,8 @@
  * -----------
  * Clase base para todos los upgrades del juego (ScriptableObject).
  *
- * PROPÓSITO:
- * - Centralizar lógica común de mejoras: nombre, costo, multiplicador, nivel actual.
+ * PROPï¿½SITO:
+ * - Centralizar lï¿½gica comï¿½n de mejoras: nombre, costo, multiplicador, nivel actual.
  * - Proveer un sistema seguro de eventos donde las subclases y la UI
  *   pueden suscribirse, pero solo la clase (o subclases) puede invocar.
  * - Establecer funciones virtuales para extensiones como bonus, GPS, OPS, etc.
@@ -22,14 +22,14 @@
  * - OnBonusPurchased: Lo mismo, pero cuando se compra un bonus opcional.
  *
  * NOTA:
- * - Se usan métodos protected (RaiseLevelChanged y RaiseBonusPurchased)
+ * - Se usan mï¿½todos protected (RaiseLevelChanged y RaiseBonusPurchased)
  *   para evitar que la UI o sistemas externos invoquen eventos accidentalmente.
  *
- * Cambios importantes en esta versión:
- * - Se añadió soporte para múltiples bonuses por upgrade (ej. cada 50 niveles).
+ * Cambios importantes en esta versiï¿½n:
+ * - Se aï¿½adiï¿½ soporte para mï¿½ltiples bonuses por upgrade (ej. cada 50 niveles).
  * - El UpgradeBase contiene ahora campos por defecto relacionados con bonus:
  *   hasBonus, bonusInterval, bonusCost, bonusMultiplierPerBonus y bonusCount.
- * - Las subclases pueden seguir sobrescribiendo la lógica si necesitan comportamiento distinto.
+ * - Las subclases pueden seguir sobrescribiendo la lï¿½gica si necesitan comportamiento distinto.
  */
 
 
@@ -46,6 +46,10 @@ public abstract class UpgradeBase : ScriptableObject
     // Eventos a los que otros sistemas pueden suscribirse, pero no invocar.
     public event Action OnLevelChanged;
     public event Action OnBonusPurchased;
+
+    // Evento global: se dispara una vez por cada nivel COMPRADO (no al cargar el save).
+    // Lo usan sistemas transversales como las misiones diarias.
+    public static event Action<UpgradeBase> OnAnyLevelPurchased;
 
     [Header("Bonus (base settings - multi-bonus support)")]
     public bool hasBonus = false;
@@ -64,6 +68,7 @@ public abstract class UpgradeBase : ScriptableObject
     {
         currentLevel++;
         RaiseLevelChanged();
+        OnAnyLevelPurchased?.Invoke(this);
     }
 
     // BONUS API
@@ -78,8 +83,8 @@ public abstract class UpgradeBase : ScriptableObject
         if (!HasBonus()) return false;
 
         // A new bonus becomes available cada "bonusInterval" niveles.
-        // Si bonusCount==0, el primer bonus está disponible cuando currentLevel >= bonusInterval.
-        // En general, el (bonusCount+1)-ésimo bonus requiere levels >= (bonusCount+1) * bonusInterval.
+        // Si bonusCount==0, el primer bonus estï¿½ disponible cuando currentLevel >= bonusInterval.
+        // En general, el (bonusCount+1)-ï¿½simo bonus requiere levels >= (bonusCount+1) * bonusInterval.
         int requiredLevelForNextBonus = (bonusCount + 1) * Math.Max(1, bonusInterval);
         return currentLevel >= requiredLevelForNextBonus;
     }
@@ -88,7 +93,7 @@ public abstract class UpgradeBase : ScriptableObject
     {
         if (!HasBonus()) return false;
 
-        // Verificar que el bonus esté disponible por nivel
+        // Verificar que el bonus estï¿½ disponible por nivel
         if (!IsBonusAvailable()) return false;
 
         double cost = GetBonusCostFor(bonusCount + 1);
@@ -116,7 +121,7 @@ public abstract class UpgradeBase : ScriptableObject
     }
 
     /// <summary>
-    /// Se usa al cargar datos guardados sin ejecutar lógica adicional.
+    /// Se usa al cargar datos guardados sin ejecutar lï¿½gica adicional.
     /// </summary>
     public virtual void ApplyLoadedState(int loadedLevel)
     {
@@ -125,9 +130,9 @@ public abstract class UpgradeBase : ScriptableObject
     }
 
     /// <summary>
-    /// Método público seguro para aplicar la cantidad de bonuses cargada desde el save.
-    /// Esto actualizará internalmente bonusCount y disparará OnBonusPurchased (una sola vez)
-    /// para notificar a sistemas dependientes que el estado de bonus cambió.
+    /// Mï¿½todo pï¿½blico seguro para aplicar la cantidad de bonuses cargada desde el save.
+    /// Esto actualizarï¿½ internalmente bonusCount y dispararï¿½ OnBonusPurchased (una sola vez)
+    /// para notificar a sistemas dependientes que el estado de bonus cambiï¿½.
     /// </summary>
     public virtual void ApplyLoadedBonusCount(int loadedBonusCount)
     {
@@ -138,12 +143,12 @@ public abstract class UpgradeBase : ScriptableObject
             return;
         }
 
-        // Sólo aplicar si es distinto para evitar notificaciones innecesarias
+        // Sï¿½lo aplicar si es distinto para evitar notificaciones innecesarias
         if (bonusCount != loadedBonusCount)
         {
             bonusCount = Mathf.Max(0, loadedBonusCount);
-            // Notificar que el estado de bonus cambió (al menos una vez).
-            // Los subscribers deben recalcular con GetTotalBonusMultiplier()/GetEffectiveGPS() según corresponda.
+            // Notificar que el estado de bonus cambiï¿½ (al menos una vez).
+            // Los subscribers deben recalcular con GetTotalBonusMultiplier()/GetEffectiveGPS() segï¿½n corresponda.
             RaiseBonusPurchased();
         }
     }

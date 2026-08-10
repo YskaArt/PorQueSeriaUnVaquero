@@ -14,6 +14,10 @@ public class AdsManager : MonoBehaviour
 {
     public static AdsManager Instance { get; private set; }
 
+    // Se dispara cuando el usuario completa un rewarded y obtiene la recompensa.
+    // Lo usan sistemas transversales como las misiones diarias.
+    public static event Action OnRewardedAdGranted;
+
     [Header("Ad Unit IDs (usar test ids en desarrollo)")]
     [SerializeField] private string bannerAdUnitId = "ca-app-pub-8408315673471628/8656782151";
     [SerializeField] private string interstitialAdUnitId = "ca-app-pub-8408315673471628/5911199317";
@@ -213,8 +217,8 @@ public class AdsManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Muestra un rewarded ad. Usa el preloaded si existe; si no, intentará cargar y mostrar.
-    /// Llama onComplete(true) si el usuario obtuvo reward, false si falló/no reward.
+    /// Muestra un rewarded ad. Usa el preloaded si existe; si no, intentarï¿½ cargar y mostrar.
+    /// Llama onComplete(true) si el usuario obtuvo reward, false si fallï¿½/no reward.
     /// </summary>
     public IEnumerator ShowRewardedAdCoroutine(Action<bool> onComplete)
     {
@@ -262,7 +266,7 @@ public class AdsManager : MonoBehaviour
         }
         else
         {
-            Debug.Log("[AdsManager] No preloaded rewarded — loading and showing now...");
+            Debug.Log("[AdsManager] No preloaded rewarded ï¿½ loading and showing now...");
             // Attempt to load and immediately show (with timeouts)
             bool loadDone = false;
             RewardedAd loadedAd = null;
@@ -350,6 +354,13 @@ public class AdsManager : MonoBehaviour
         }
 
         Debug.Log("[AdsManager] Rewarded finished. Granted=" + granted);
+
+        if (granted)
+        {
+            try { OnRewardedAdGranted?.Invoke(); }
+            catch (Exception ex) { Debug.LogWarning("[AdsManager] OnRewardedAdGranted handler error: " + ex); }
+        }
+
         onComplete?.Invoke(granted);
     }
 

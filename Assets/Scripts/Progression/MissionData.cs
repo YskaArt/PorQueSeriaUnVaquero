@@ -1,0 +1,103 @@
+/*
+ * MissionData (ScriptableObject)
+ * ------------------------------
+ * Define una misión diaria: qué hay que hacer, cuánto, y qué recompensa da.
+ *
+ * USO:
+ * - Crear assets con "Create > Idle > Missions > Mission" y guardarlos en
+ *   Assets/Resources/Missions/ para que DailyMissionManager los encuentre.
+ * - missionId debe ser único y estable (se usa en el save para restaurar progreso).
+ *
+ * TARGETS:
+ * - targetAmount: objetivo fijo (enemigos, niveles, ads, jefes...).
+ * - targetMinutesOfGPS (> 0, solo para EarnGold): el objetivo se resuelve al asignar
+ *   la misión como "X minutos de tu GPS actual", así escala con el progreso del jugador.
+ *   Si el GPS es 0 (jugador nuevo), se usa targetAmount como fallback.
+ *
+ * RECOMPENSAS (se pueden combinar):
+ * - rewardFlatGold: oro fijo.
+ * - rewardMinutesOfGPS: oro equivalente a X minutos del GPS actual al reclamar.
+ * - rewardMasteryPoints: puntos de maestría directos.
+ */
+
+using UnityEngine;
+
+public enum MissionType
+{
+    KillEnemies,        // eliminar N enemigos
+    EarnGold,           // ganar N de oro (o N minutos de GPS)
+    BuyUpgradeLevels,   // comprar N niveles de cualquier upgrade
+    WatchRewardedAd,    // ver N rewarded ads completos
+    DefeatBoss          // derrotar N jefes de zona
+}
+
+[CreateAssetMenu(fileName = "NewMission", menuName = "Idle/Missions/Mission")]
+public class MissionData : ScriptableObject
+{
+    [Header("Identidad")]
+    [Tooltip("Id único y estable; se usa en el save")]
+    public string missionId;
+    [TextArea]
+    public string description;
+
+    [Header("Objetivo")]
+    public MissionType type;
+    [Tooltip("Objetivo fijo (y fallback si targetMinutesOfGPS no aplica)")]
+    public double targetAmount = 10;
+    [Tooltip("Solo EarnGold: objetivo = X minutos del GPS al asignar (0 = usar targetAmount fijo)")]
+    public double targetMinutesOfGPS = 0;
+
+    [Header("Recompensa")]
+    public double rewardFlatGold = 0;
+    [Tooltip("Oro equivalente a X minutos del GPS actual al reclamar")]
+    public double rewardMinutesOfGPS = 0;
+    public int rewardMasteryPoints = 0;
+
+    /// <summary>Resuelve el objetivo real de la misión al momento de asignarla.</summary>
+    public double ResolveTarget()
+    {
+        if (type == MissionType.EarnGold && targetMinutesOfGPS > 0)
+        {
+            double gps = GoldManager.Instance != null ? GoldManager.Instance.CurrentGoldPerSecond : 0;
+            if (gps > 0)
+                return targetMinutesOfGPS * 60.0 * gps;
+        }
+        return targetAmount;
+    }
+
+    /// <summary>Texto corto de la recompensa para la UI (ej: "1.2K Gold + 1 Mastery").</summary>
+    public string BuildRewardLabel()
+    {
+        double gold = rewardFlatGold;
+        double gps = GoldManager.Instance != null ? GoldManager.Instance.CurrentGoldPerSecond : 0;
+        if (rewardMinutesOfGPS > 0 && gps > 0)
+            gold += rewardMinutesOfGPS * 60.0 * gps;
+
+        string label = "";
+        if (gold > 0)
+            label += GoldManager.FormatNumber(gold) + " Gold";
+
+        if (rewardMasteryPoints > 0)
+        {
+            if (label.Length > 0) label += " + ";
+            label += rewardMasteryPoints + " Mastery";
+        }
+
+        return label.Length > 0 ? label : "-";
+    }
+
+    /// <summary>Otorga la recompensa (llamado por DailyMissionManager al reclamar).</summary>
+    public void GrantReward()
+    {
+        double gold = rewardFlatGold;
+        double gps = GoldManager.Instance != null ? GoldManager.Instance.CurrentGoldPerSecond : 0;
+        if (rewardMinutesOfGPS > 0 && gps > 0)
+            gold += rewardMinutesOfGPS * 60.0 * gps;
+
+        if (gold > 0)
+            GoldManager.Instance?.AddGold(gold);
+
+        if (rewardMasteryPoints > 0)
+            MasteryManager.Instance?.AddPoints(rewardMasteryPoints);
+    }
+}
