@@ -53,6 +53,9 @@ public abstract class UpgradeBase : ScriptableObject
 
     [Header("Bonus (base settings - multi-bonus support)")]
     public bool hasBonus = false;
+    [Tooltip("Nivel en el que se desbloquea el PRIMER bonus (ej: 10).")]
+    public int firstBonusLevel = 10;
+    [Tooltip("Cada cuantos niveles se desbloquea un bonus A PARTIR DEL SEGUNDO (ej: 50 -> 50,100,150,200...).")]
     public int bonusInterval = 50;
     public double bonusCost = 10000;
     public double bonusMultiplierPerBonus = 2.0;
@@ -82,12 +85,25 @@ public abstract class UpgradeBase : ScriptableObject
     {
         if (!HasBonus()) return false;
 
-        // A new bonus becomes available cada "bonusInterval" niveles.
-        // Si bonusCount==0, el primer bonus est� disponible cuando currentLevel >= bonusInterval.
-        // En general, el (bonusCount+1)-�simo bonus requiere levels >= (bonusCount+1) * bonusInterval.
-        int requiredLevelForNextBonus = (bonusCount + 1) * Math.Max(1, bonusInterval);
+        int requiredLevelForNextBonus = GetRequiredLevelForBonus(bonusCount + 1);
         return currentLevel >= requiredLevelForNextBonus;
     }
+
+    /// <summary>
+    /// Nivel de compra requerido para desbloquear el bonus N (1-based).
+    /// Progresion pedida: el primer bonus se desbloquea en firstBonusLevel (ej. 10),
+    /// y a partir del segundo, cada bonusInterval niveles (ej. 50, 100, 150, 200...).
+    /// Con los valores por defecto (firstBonusLevel=10, bonusInterval=50) da: 10, 50, 100, 150, 200...
+    /// </summary>
+    public int GetRequiredLevelForBonus(int bonusNumber)
+    {
+        if (bonusNumber <= 0) return 0;
+        if (bonusNumber == 1) return Math.Max(1, firstBonusLevel);
+        return (bonusNumber - 1) * Math.Max(1, bonusInterval);
+    }
+
+    /// <summary>Nivel requerido para el proximo bonus (util para UI). -1 si no soporta bonus.</summary>
+    public int GetNextBonusRequiredLevel() => HasBonus() ? GetRequiredLevelForBonus(bonusCount + 1) : -1;
 
     public virtual bool BuyBonus()
     {

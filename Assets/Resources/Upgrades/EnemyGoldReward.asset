@@ -16,7 +16,8 @@ MonoBehaviour:
   baseCost: 50
   costMultiplier: 3.45
   currentLevel: 0
-  hasBonus: 0
+  hasBonus: 1
+  firstBonusLevel: 10
   bonusInterval: 25
   bonusCost: 1600000
   bonusMultiplierPerBonus: 3.45

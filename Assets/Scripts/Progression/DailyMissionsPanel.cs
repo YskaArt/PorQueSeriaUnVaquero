@@ -43,7 +43,7 @@ public class DailyMissionsPanel : MonoBehaviour
         if (DailyMissionManager.Instance != null)
             DailyMissionManager.Instance.OnMissionsChanged += RebindAll;
 
-        if (panelRoot != null) panelRoot.SetActive(false);
+        
         RebindAll();
     }
 

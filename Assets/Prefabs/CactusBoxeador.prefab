@@ -10,10 +10,10 @@ GameObject:
   m_Component:
   - component: {fileID: 3148737007113602184}
   - component: {fileID: 2062088058075331700}
-  - component: {fileID: 3296955271850176635}
   - component: {fileID: 4538184651019057192}
   - component: {fileID: 8494310764306908301}
   - component: {fileID: 9035143693908487629}
+  - component: {fileID: 8331594715669245481}
   m_Layer: 0
   m_Name: CactusBoxeador
   m_TagString: Enemy
@@ -96,22 +96,6 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
---- !u!114 &3296955271850176635
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3014241384524465555}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1841cea87b9e8e543a6ce1618b6aded2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  enemyTypeId: BoxerCactus
-  fallSpeed: 5
-  minY: -25
-  lifetime: 10
 --- !u!61 &4538184651019057192
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -207,6 +191,22 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &8331594715669245481
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3014241384524465555}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1841cea87b9e8e543a6ce1618b6aded2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RunnerEnemy
+  enemyTypeId: BoxerCactus
+  fallSpeed: 5
+  minY: -25
+  lifetime: 10
 --- !u!1 &5633910050764805378
 GameObject:
   m_ObjectHideFlags: 0

@@ -115,8 +115,15 @@ public class DailyMissionManager : MonoBehaviour
     private void OnRewardedAdGranted() =>
         ReportProgress(MissionType.WatchRewardedAd, 1);
 
-    /// <summary>Suma progreso a todas las misiones activas del tipo dado.</summary>
-    public void ReportProgress(MissionType type, double amount)
+    /// <summary>
+    /// Suma progreso a todas las misiones activas del tipo dado.
+    /// </summary>
+    /// <param name="sourceTypeId">
+    /// Id del enemigo/jefe que originó el progreso (RunnerEnemy.EnemyTypeId o MiniBossController.BossId).
+    /// Opcional: si una misión tiene enemyTypeFilter vacío, cuenta igual sin importar este valor
+    /// (comportamiento genérico, como antes). Si la misión tiene un filtro, solo cuenta cuando coincide.
+    /// </param>
+    public void ReportProgress(MissionType type, double amount, string sourceTypeId = null)
     {
         if (amount <= 0) return;
 
@@ -124,6 +131,14 @@ public class DailyMissionManager : MonoBehaviour
         foreach (var m in activeMissions)
         {
             if (m.claimed || m.data == null || m.data.type != type || m.IsCompleted) continue;
+
+            // Filtro por tipo de enemigo/jefe (solo aplica si la misión pide uno específico)
+            string filter = m.data.enemyTypeFilter;
+            if (!string.IsNullOrEmpty(filter))
+            {
+                if (string.IsNullOrEmpty(sourceTypeId) || !string.Equals(filter, sourceTypeId, StringComparison.Ordinal))
+                    continue;
+            }
 
             m.progress = Math.Min(m.target, m.progress + amount);
             if (m.IsCompleted)

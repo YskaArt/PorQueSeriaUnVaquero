@@ -47,6 +47,11 @@ public class MissionData : ScriptableObject
     [Tooltip("Solo EarnGold: objetivo = X minutos del GPS al asignar (0 = usar targetAmount fijo)")]
     public double targetMinutesOfGPS = 0;
 
+    [Header("Filtro por tipo (solo KillEnemies / DefeatBoss)")]
+    [Tooltip("Debe coincidir EXACTO con el enemyTypeId del RunnerEnemy o el bossId del MiniBossController. " +
+             "Vacío = cuenta cualquier enemigo/jefe (comportamiento genérico).")]
+    public string enemyTypeFilter = "";
+
     [Header("Recompensa")]
     public double rewardFlatGold = 0;
     [Tooltip("Oro equivalente a X minutos del GPS actual al reclamar")]
