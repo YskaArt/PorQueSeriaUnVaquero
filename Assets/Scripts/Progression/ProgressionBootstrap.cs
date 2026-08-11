@@ -20,8 +20,7 @@ public static class ProgressionBootstrap
 
         var go = new GameObject("ProgressionSystems");
         go.AddComponent<MasteryManager>();
-        go.AddComponent<DailyMissionManager>();
-        go.AddComponent<ZoneMissionManager>();
+     
         go.AddComponent<ShopManager>();
         go.AddComponent<OfflineEarningsManager>();
         Object.DontDestroyOnLoad(go);

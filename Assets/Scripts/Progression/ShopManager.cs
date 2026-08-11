@@ -122,7 +122,7 @@ public class ShopManager : MonoBehaviour
             {
                 GoldManager.Instance?.AddGold(GetGoldRushAmount());
                 OnShopStateChanged?.Invoke();
-                GameSaveManager.Instance?.SaveGame();
+                GameSaveManager.Instance?.RequestSave();
             }
             onDone?.Invoke(granted);
         });
@@ -171,7 +171,7 @@ public class ShopManager : MonoBehaviour
 
         ApplyBoost();
         OnShopStateChanged?.Invoke();
-        GameSaveManager.Instance?.SaveGame();
+        GameSaveManager.Instance?.RequestSave();
 
         Debug.Log($"[ShopManager] Boost x{multiplier} activo por {boostRemainingSeconds / 60f:0.#} min.");
     }

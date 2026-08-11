@@ -157,7 +157,7 @@ public class DailyMissionManager : MonoBehaviour
 
         mission.claimed = true;
         mission.data.GrantReward();
-        GameSaveManager.Instance?.SaveGame();
+        GameSaveManager.Instance?.RequestSave();
         OnMissionsChanged?.Invoke();
         return true;
     }
@@ -216,7 +216,7 @@ public class DailyMissionManager : MonoBehaviour
                   string.Join(", ", activeMissions.Select(m => m.data.missionId)));
 
         OnMissionsChanged?.Invoke();
-        GameSaveManager.Instance?.SaveGame();
+        GameSaveManager.Instance?.RequestSave();
     }
 
     // ================== PERSISTENCIA ==================

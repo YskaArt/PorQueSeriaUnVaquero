@@ -72,6 +72,23 @@ public class ZoneMissionManager : MonoBehaviour
         Instance = this;
     }
 
+    /// <summary>
+    /// Red de seguridad: garantiza que haya misiones activas para la zona indicada.
+    /// Si por algún motivo OnZoneEntered no se disparó a tiempo (orden de inicialización,
+    /// timing entre escenas, etc.), esto genera el set on-demand. Es barato llamarlo seguido:
+    /// si ya está todo al día, no hace nada.
+    /// </summary>
+    public void EnsureZone(int zoneIndex)
+    {
+        LoadPool();
+
+        if (currentZoneIndex == zoneIndex && activeMissions.Count > 0)
+            return; // ya está generado y corresponde a la zona actual
+
+        Debug.LogWarning($"[ZoneMissionManager] EnsureZone: no había misiones válidas para la zona {zoneIndex}. Generando ahora (fallback).");
+        GenerateForZone(zoneIndex);
+    }
+
     // ================== ENTRADA A ZONA (llamado por GameManager) ==================
 
     /// <summary>
@@ -121,7 +138,7 @@ public class ZoneMissionManager : MonoBehaviour
         if (anyCompletedNow)
             OnMissionsChanged?.Invoke();
 
-        GameSaveManager.Instance?.SaveGame();
+        GameSaveManager.Instance?.RequestSave();
     }
 
     /// <summary>Reclama la recompensa de una misión completada. Devuelve true si se otorgó.</summary>
@@ -132,7 +149,7 @@ public class ZoneMissionManager : MonoBehaviour
 
         mission.claimed = true;
         mission.data.GrantReward();
-        GameSaveManager.Instance?.SaveGame();
+        GameSaveManager.Instance?.RequestSave();
         OnMissionsChanged?.Invoke();
         return true;
     }
@@ -188,7 +205,7 @@ public class ZoneMissionManager : MonoBehaviour
                   string.Join(", ", activeMissions.Select(m => m.data.missionId)));
 
         OnMissionsChanged?.Invoke();
-        GameSaveManager.Instance?.SaveGame();
+        GameSaveManager.Instance?.RequestSave();
     }
 
     // ================== PERSISTENCIA ==================

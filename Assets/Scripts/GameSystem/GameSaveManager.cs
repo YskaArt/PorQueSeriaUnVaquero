@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
@@ -82,6 +83,34 @@ public class GameSaveManager : MonoBehaviour
         allUpgradesCache = Array.Empty<UpgradeBase>();
         Debug.LogWarning("[GameSaveManager] No upgrades found by any method!");
         return allUpgradesCache;
+    }
+
+    // ================== GUARDADO DIFERIDO (evita hitches por I/O sincrónico) ==================
+    [Header("Guardado diferido")]
+    [Tooltip("Cuánto esperar antes de escribir a disco después de un RequestSave(). " +
+             "Si llegan varios pedidos seguidos (ej: varios kills consecutivos), se juntan en un solo guardado real.")]
+    [SerializeField] private float saveDebounceSeconds = 0.5f;
+
+    private Coroutine pendingSaveRoutine;
+
+    /// <summary>
+    /// Pide un guardado "para dentro de un rato" en vez de escribir a disco ahora mismo.
+    /// Usar esto para eventos frecuentes/automáticos (progreso de misiones, generación de
+    /// sets, etc.) en vez de SaveGame() directo, para no bloquear el frame con I/O sincrónico.
+    /// Para cierres de la app (OnApplicationQuit/Pause) seguimos usando SaveGame() directo,
+    /// ahí sí necesitamos la garantía de que se escribió antes de que el proceso muera.
+    /// </summary>
+    public void RequestSave()
+    {
+        if (pendingSaveRoutine != null) return; // ya hay uno programado, no acumular más
+        pendingSaveRoutine = StartCoroutine(DelayedSaveRoutine());
+    }
+
+    private IEnumerator DelayedSaveRoutine()
+    {
+        yield return new WaitForSecondsRealtime(saveDebounceSeconds);
+        pendingSaveRoutine = null;
+        SaveGame();
     }
 
     // ================== SAVE ==================
@@ -397,12 +426,27 @@ public class GameSaveManager : MonoBehaviour
 
     private void OnApplicationQuit()
     {
+        FlushPendingSave();
         SaveGame();
     }
 
     private void OnApplicationPause(bool paused)
     {
-        if (paused) SaveGame();
+        if (paused)
+        {
+            FlushPendingSave();
+            SaveGame();
+        }
+    }
+
+    /// <summary>Cancela cualquier guardado diferido pendiente (ya se va a guardar YA, sin esperar el debounce).</summary>
+    private void FlushPendingSave()
+    {
+        if (pendingSaveRoutine != null)
+        {
+            StopCoroutine(pendingSaveRoutine);
+            pendingSaveRoutine = null;
+        }
     }
 }
 

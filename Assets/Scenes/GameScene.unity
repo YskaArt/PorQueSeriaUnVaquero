@@ -16244,6 +16244,7 @@ GameObject:
   - component: {fileID: 575271539}
   - component: {fileID: 575271540}
   - component: {fileID: 575271541}
+  - component: {fileID: 575271542}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -16390,6 +16391,23 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 872f74dde4db47928fe1fd9f741d2d21, type: 2}
   - {fileID: 11400000, guid: e518f9a25bcd437bb12375ee527916a2, type: 2}
   - {fileID: 11400000, guid: c1e717ca62a34acc8ab9c82d18852e6a, type: 2}
+--- !u!114 &575271542
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 575271534}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f82520949f245945a89f904966c84c5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::OfflineEarningsManager
+  baseRewardPercent: 0.3
+  adRewardPercent: 0.6
+  maxOfflineHours: 12
+  minOfflineSecondsToShow: 60
+  minGoldToShow: 1
 --- !u!1 &578394808
 GameObject:
   m_ObjectHideFlags: 0
@@ -18462,7 +18480,7 @@ MonoBehaviour:
   closeButton: {fileID: 2044153534}
   dailyTabButton: {fileID: 841217886}
   zoneTabButton: {fileID: 364882877}
-  defaultTab: 1
+  defaultTab: 0
   dailyMissionsPanel: {fileID: 922766725}
   zoneMissionsPanel: {fileID: 566775065}
   dailyTabSelectedMark: {fileID: 922766722}
@@ -38583,6 +38601,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1412030133}
+  - component: {fileID: 1412030134}
   m_Layer: 5
   m_Name: Pag1
   m_TagString: Untagged
@@ -38616,6 +38635,26 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1412030134
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1412030132}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b16b94d0a93717b4590bff63d2451444, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::OfflineEarningsPanel
+  panelRoot: {fileID: 1466475768}
+  offlineTimeText: {fileID: 426635219}
+  baseRewardText: {fileID: 776321340}
+  adRewardText: {fileID: 1050157046}
+  claimBaseButton: {fileID: 1353397089}
+  claimAdButton: {fileID: 631031664}
+  closeButton: {fileID: 0}
+  adLoadingIndicator: {fileID: 0}
 --- !u!1 &1422610007
 GameObject:
   m_ObjectHideFlags: 0
@@ -39732,7 +39771,6 @@ GameObject:
   - component: {fileID: 1466475769}
   - component: {fileID: 1466475772}
   - component: {fileID: 1466475771}
-  - component: {fileID: 1466475770}
   m_Layer: 5
   m_Name: OfflineGold
   m_TagString: Untagged
@@ -39760,26 +39798,6 @@ RectTransform:
   m_AnchoredPosition: {x: -71.96675, y: 7}
   m_SizeDelta: {x: 212.5, y: 240.8}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &1466475770
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1466475768}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b16b94d0a93717b4590bff63d2451444, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::OfflineEarningsPanel
-  panelRoot: {fileID: 1466475768}
-  offlineTimeText: {fileID: 426635219}
-  baseRewardText: {fileID: 776321340}
-  adRewardText: {fileID: 1050157046}
-  claimBaseButton: {fileID: 1353397089}
-  claimAdButton: {fileID: 631031664}
-  closeButton: {fileID: 0}
-  adLoadingIndicator: {fileID: 0}
 --- !u!114 &1466475771
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -53956,11 +53974,11 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1650352600}
-  - {fileID: 569997663}
   - {fileID: 1618354041}
   - {fileID: 559932808}
   - {fileID: 947214199}
   - {fileID: 1790290968}
+  - {fileID: 569997663}
   - {fileID: 358254147}
   - {fileID: 1433467988}
   - {fileID: 907347371}
