@@ -16280,7 +16280,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameStartManager
   fadeImage: {fileID: 86152022}
-  fadeDuration: 2
+  fadeDuration: 4
   welcomeText: {fileID: 1650352601}
   welcomeDisplayTime: 3
   levels:
@@ -47286,6 +47286,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 6ff8141fcc3bff04795a577028ac90eb, type: 2}
   - {fileID: 11400000, guid: b7644f94f90def14eb35e5e8a751f330, type: 2}
   - {fileID: 11400000, guid: fede8413a5e8c6544922d1de3032a16f, type: 2}
+  saveDebounceSeconds: 0.5
 --- !u!4 &1771285795
 Transform:
   m_ObjectHideFlags: 0

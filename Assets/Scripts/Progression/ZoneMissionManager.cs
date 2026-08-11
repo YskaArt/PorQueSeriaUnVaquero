@@ -160,6 +160,13 @@ public class ZoneMissionManager : MonoBehaviour
 
     // ================== GENERACIÓN ==================
 
+    /// <summary>
+    /// Precarga el pool de misiones de zona (Resources.LoadAll) sin generar nada
+    /// todavía (eso requiere saber en qué zona estás, que recién se sabe en
+    /// GameScene). Pensado para llamarse desde la LoadingScreen. Idempotente.
+    /// </summary>
+    public void WarmUp() => LoadPool();
+
     private void LoadPool()
     {
         if (pool != null && pool.Length > 0) return;

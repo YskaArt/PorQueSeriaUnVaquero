@@ -168,6 +168,14 @@ public class DailyMissionManager : MonoBehaviour
 
     // ================== ROTACIÓN DIARIA ==================
 
+    /// <summary>
+    /// Precarga el pool de misiones (Resources.LoadAll) sin generar nada todavia.
+    /// Pensado para llamarse desde la LoadingScreen, asi el primer uso real
+    /// (cuando arranca el dia) no paga el costo de I/O en un frame critico.
+    /// Idempotente: si ya esta cargado, no hace nada.
+    /// </summary>
+    public void WarmUp() => LoadPool();
+
     private void LoadPool()
     {
         if (pool != null && pool.Length > 0) return;

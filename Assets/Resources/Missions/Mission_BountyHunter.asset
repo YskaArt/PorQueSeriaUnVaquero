@@ -18,5 +18,5 @@ MonoBehaviour:
   targetAmount: 400
   targetMinutesOfGPS: 0
   rewardFlatGold: 0
-  rewardMinutesOfGPS: 0
-  rewardMasteryPoints: 1
+  rewardMinutesOfGPS: 20
+  rewardMasteryPoints: 0
