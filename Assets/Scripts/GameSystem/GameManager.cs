@@ -15,6 +15,14 @@ using TMPro;
 /// - Muestra un mensaje de bienvenida al entrar a cada nivel.
 /// - Mantiene una instancia persistente (Singleton).
 ///
+/// LOADING GATE (nuevo):
+/// - Al arrancar, el juego queda PAUSADO (Time.timeScale = 0) con la pantalla
+///   en negro (fadeImage, que ya arrancaba así) hasta que todo lo necesario
+///   para jugar esté realmente listo (nivel aplicado, misiones de zona
+///   generadas, etc.). Recién ahí se despausa y se revela con el FadeIn()
+///   existente. Esto reemplaza la idea de una escena de LoadingScreen aparte:
+///   lo pesado vive en esta escena, así que el "loading" tiene que pasar acá.
+///
 
 [DisallowMultipleComponent]
 public class GameManager : MonoBehaviour
@@ -24,6 +32,20 @@ public class GameManager : MonoBehaviour
     [Header("Fade")]
     [SerializeField] private Image fadeImage;
     [SerializeField] private float fadeDuration = 1.0f;
+
+    [Header("Loading Overlay (opcional, decorativo)")]
+    [Tooltip("GameObject CON el título/arte y la barra de progreso, por ENCIMA del fadeImage negro. Se muestra mientras se espera y se oculta justo antes de empezar el FadeIn.")]
+    [SerializeField] private GameObject loadingOverlayRoot;
+    [Tooltip("Barra de progreso (Image Type = Filled). Opcional.")]
+    [SerializeField] private Image loadingProgressFill;
+    [Tooltip("Texto de progreso, ej. 'Cargando... 42%'. Opcional.")]
+    [SerializeField] private TextMeshProUGUI loadingProgressText;
+
+    [Header("Loading Gate")]
+    [Tooltip("Tiempo máximo de espera por las dependencias antes de arrancar igual, para no dejar al jugador colgado si algo falla.")]
+    [SerializeField] private float maxLoadingWaitSeconds = 3f;
+    [Tooltip("Tiempo MÍNIMO que se muestra la pantalla de carga, aunque todo esté listo antes. Evita que se sienta como un parpadeo cuando venís del menú (donde ya se precalentó casi todo).")]
+    [SerializeField] private float minLoadingDisplaySeconds = 1.2f;
 
     [Header("Welcome Text")]
     [SerializeField] private TextMeshProUGUI welcomeText;
@@ -38,13 +60,18 @@ public class GameManager : MonoBehaviour
 
     private void Awake()
     {
+        Debug.Log($"[GameManager] Awake() en {gameObject.name} | Instance actual: {(Instance == null ? "null" : Instance.gameObject.name)} | Escena: {gameObject.scene.name}");
+
         if (Instance != null && Instance != this)
         {
+            Debug.Log("[GameManager] Ya existe una Instance distinta -> me autodestruyo.");
             Destroy(gameObject);
             return;
         }
         Instance = this;
         DontDestroyOnLoad(gameObject);
+
+        Debug.Log($"[GameManager] fadeImage asignado: {fadeImage != null} | loadingOverlayRoot asignado: {loadingOverlayRoot != null}");
 
         if (fadeImage != null)
         {
@@ -54,25 +81,114 @@ public class GameManager : MonoBehaviour
 
         if (welcomeText != null)
             welcomeText.gameObject.SetActive(false);
+
+        if (loadingOverlayRoot != null)
+            loadingOverlayRoot.SetActive(true);
+
+        SetLoadingProgress(0f, "Cargando");
+
+        // Pausar YA, en el primer Awake posible: nada debería moverse ni ser
+        // clickeable mientras la pantalla sigue en negro.
+        Time.timeScale = 0f;
+        Debug.Log($"[GameManager] Awake() terminado. Time.timeScale = {Time.timeScale}");
     }
 
     private void Start()
     {
+        Debug.Log($"[GameManager] Start() | Time.timeScale al entrar = {Time.timeScale}");
+
         // 🔥 Cargar nivel guardado
         if (GameSaveManager.Instance != null)
             currentLevelIndex = Mathf.Clamp(GameSaveManager.Instance.GetSavedLevelIndex(), 0, Mathf.Max(0, levels.Count - 1));
         else
             currentLevelIndex = Mathf.Clamp(startLevelIndex, 0, Mathf.Max(0, levels.Count - 1));
 
+        Debug.Log($"[GameManager] Nivel inicial elegido: {currentLevelIndex}");
+
         StartCoroutine(InitializeGame());
     }
 
     private IEnumerator InitializeGame()
     {
+        Debug.Log("[GameManager] InitializeGame() arrancó.");
+
+        float gateStart = Time.realtimeSinceStartup;
+
         ApplyLevel(currentLevelIndex, isNewEntry: false);
-        yield return null;
+
+        Debug.Log("[GameManager] ApplyLevel listo, esperando WaitUntilReadyToReveal...");
+
+        // Esperar (en tiempo real, sin importar la pausa) a que todo lo
+        // necesario esté realmente listo antes de destapar la pantalla.
+        yield return WaitUntilReadyToReveal();
+
+        // Aunque todo haya estado listo casi al instante (típico si venís del
+        // menú, donde ya se precalentó JIT/assets), respetamos un mínimo de
+        // tiempo visible para que la pantalla de carga no sea un parpadeo.
+        float elapsed = Time.realtimeSinceStartup - gateStart;
+        if (elapsed < minLoadingDisplaySeconds)
+        {
+            Debug.Log($"[GameManager] Todo listo en {elapsed:F2}s, esperando el mínimo de {minLoadingDisplaySeconds}s...");
+            yield return new WaitForSecondsRealtime(minLoadingDisplaySeconds - elapsed);
+        }
+
+        Debug.Log($"[GameManager] WaitUntilReadyToReveal terminó. Time.timeScale antes de destapar = {Time.timeScale}");
+
+        if (loadingOverlayRoot != null)
+            loadingOverlayRoot.SetActive(false);
+
+        Time.timeScale = 1f;
+
+        Debug.Log("[GameManager] Arrancando FadeIn().");
         yield return FadeIn();
         yield return ShowWelcomeMessage();
+        Debug.Log("[GameManager] InitializeGame() completo.");
+    }
+
+    /// <summary>
+    /// Espera a que las dependencias de arranque estén listas (misiones de zona
+    /// generadas, managers de progresión presentes, etc.), con un tope de tiempo
+    /// para no dejar al jugador trabado si algo no llegó a inicializar.
+    /// Usa tiempo REAL (WaitForSecondsRealtime / chequeos por frame) porque
+    /// Time.timeScale está en 0 mientras tanto.
+    /// </summary>
+    private IEnumerator WaitUntilReadyToReveal()
+    {
+        // Un pequeño colchón fijo: deja que se asienten Awake/Start/OnEnable
+        // del resto de los ~400 objetos de la escena antes de evaluar nada.
+        SetLoadingProgress(0.15f, "Preparando");
+        yield return new WaitForSecondsRealtime(0.15f);
+
+        SetLoadingProgress(0.35f, "Cargando datos");
+
+        float start = Time.realtimeSinceStartup;
+        while (Time.realtimeSinceStartup - start < maxLoadingWaitSeconds)
+        {
+            bool zoneReady = ZoneMissionManager.Instance == null || ZoneMissionManager.Instance.ActiveMissions.Count > 0;
+            bool dailyReady = DailyMissionManager.Instance != null;
+            bool saveReady = GameSaveManager.Instance != null;
+
+            if (zoneReady && dailyReady && saveReady)
+            {
+                SetLoadingProgress(1f, "¡Listo!");
+                yield break;
+            }
+
+            // Progreso aproximado (no hay una fuente 0..1 real acá, a diferencia de
+            // un AsyncOperation de carga de escena) para que la barra no quede quieta.
+            float t = Mathf.Clamp01((Time.realtimeSinceStartup - start) / maxLoadingWaitSeconds);
+            SetLoadingProgress(Mathf.Lerp(0.35f, 0.9f, t), "Cargando misiones");
+            yield return null; // sigue tickeando aunque timeScale sea 0
+        }
+
+        SetLoadingProgress(1f, "Listo");
+        Debug.LogWarning("[GameManager] WaitUntilReadyToReveal: se llegó al tope de espera, arrancando igual.");
+    }
+
+    private void SetLoadingProgress(float value01, string label)
+    {
+        if (loadingProgressFill != null) loadingProgressFill.fillAmount = value01;
+        if (loadingProgressText != null) loadingProgressText.text = $"{label}... {Mathf.RoundToInt(value01 * 100f)}%";
     }
 
     // ================== APLICAR NIVEL ==================

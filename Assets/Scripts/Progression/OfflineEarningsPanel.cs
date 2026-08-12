@@ -59,7 +59,22 @@ public class OfflineEarningsPanel : MonoBehaviour
         if (panelRoot != null) panelRoot.SetActive(false);
 
         if (OfflineEarningsManager.Instance != null)
+        {
             OfflineEarningsManager.Instance.OnOfflineEarningsAvailable += HandleOfferAvailable;
+
+            // Red de seguridad: si CheckForOfflineEarnings() ya corrió (ej. GoldManager.Start()
+            // se ejecutó antes que este Start()) y ya había una oferta calculada, el evento
+            // se disparó al vacío porque todavía no estábamos suscriptos. Nos ponemos al día
+            // a mano en vez de depender 100% de haber escuchado el evento a tiempo.
+            if (OfflineEarningsManager.Instance.HasPendingOffer)
+            {
+                HandleOfferAvailable(
+                    OfflineEarningsManager.Instance.PendingBaseReward,
+                    OfflineEarningsManager.Instance.PendingAdReward,
+                    OfflineEarningsManager.Instance.PendingElapsedSeconds
+                );
+            }
+        }
     }
 
     private void OnDestroy()

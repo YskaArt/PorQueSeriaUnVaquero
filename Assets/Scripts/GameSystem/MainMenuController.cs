@@ -6,6 +6,14 @@ using GoogleMobileAds.Api;
 /// Controlador del menú principal. Inicializa los anuncios, muestra un banner,
 /// y carga la última escena jugada (o una escena por defecto) al detectar input.
 /// También permite iniciar escenas manualmente u ocultar/cerrar el juego.
+///
+/// FIX: se agregó un guard (hasStartedGame) para que StartGame()/LoadScene solo
+/// se dispare UNA vez. Antes, cada toque detectado en Update() volvía a llamar
+/// SceneManager.LoadScene("GameScene") -- si el jugador tocaba más de una vez
+/// seguida (algo común, sobre todo si algún botón tarda en responder), se
+/// interrumpía la carga de la escena a mitad de camino con una carga nueva,
+/// dejando a GameManager en un estado inconsistente (por ejemplo, con
+/// Time.timeScale ya en 1 sin haber llegado a mostrar la pantalla de carga).
 /// </summary>
 public class MainMenuController : MonoBehaviour
 {
@@ -13,6 +21,8 @@ public class MainMenuController : MonoBehaviour
     private BannerView bannerView;
 
     [SerializeField] private string defaultScene = "GameScene";
+
+    private bool hasStartedGame = false;
 
     private void Start()
     {
@@ -25,15 +35,20 @@ public class MainMenuController : MonoBehaviour
 
     private void Update()
     {
+        if (hasStartedGame) return; // evita disparar la carga más de una vez si tocan varias veces
+
         if (Input.GetMouseButtonDown(0) || Input.touchCount > 0)
         {
             StartGame();
         }
     }
 
- 
+
     public void StartGame()
     {
+        if (hasStartedGame) return;
+        hasStartedGame = true;
+
         SceneManager.LoadScene(defaultScene);
     }
 

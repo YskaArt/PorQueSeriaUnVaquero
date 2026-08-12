@@ -20,6 +20,7 @@
  * - rewardMasteryPoints: puntos de maestría directos.
  */
 
+using System;
 using UnityEngine;
 
 public enum MissionType
@@ -71,12 +72,21 @@ public class MissionData : ScriptableObject
     }
 
     /// <summary>Texto corto de la recompensa para la UI (ej: "1.2K Gold + 1 Mastery").</summary>
+    /// <summary>
+    /// GPS mínimo asumido para calcular recompensas "en minutos de GPS" cuando el
+    /// jugador todavía no tiene ningún GPS real (0). Sin esto, las misiones que
+    /// solo dan rewardMinutesOfGPS (sin rewardFlatGold) otorgarían 0 oro y se
+    /// verían como "-" justo a los jugadores nuevos, que son los que más lo necesitan.
+    /// Ajustable si no coincide con el ritmo real de la economía temprana del juego.
+    /// </summary>
+    private const double MinimumAssumedGPS = 1.0;
+
     public string BuildRewardLabel()
     {
         double gold = rewardFlatGold;
         double gps = GoldManager.Instance != null ? GoldManager.Instance.CurrentGoldPerSecond : 0;
-        if (rewardMinutesOfGPS > 0 && gps > 0)
-            gold += rewardMinutesOfGPS * 60.0 * gps;
+        if (rewardMinutesOfGPS > 0)
+            gold += rewardMinutesOfGPS * 60.0 * Math.Max(gps, MinimumAssumedGPS);
 
         string label = "";
         if (gold > 0)
@@ -96,8 +106,8 @@ public class MissionData : ScriptableObject
     {
         double gold = rewardFlatGold;
         double gps = GoldManager.Instance != null ? GoldManager.Instance.CurrentGoldPerSecond : 0;
-        if (rewardMinutesOfGPS > 0 && gps > 0)
-            gold += rewardMinutesOfGPS * 60.0 * gps;
+        if (rewardMinutesOfGPS > 0)
+            gold += rewardMinutesOfGPS * 60.0 * Math.Max(gps, MinimumAssumedGPS);
 
         if (gold > 0)
             GoldManager.Instance?.AddGold(gold);
