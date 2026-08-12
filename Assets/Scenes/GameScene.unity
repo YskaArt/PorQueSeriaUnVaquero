@@ -16201,7 +16201,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &566775063
 RectTransform:
   m_ObjectHideFlags: 0
@@ -16402,8 +16402,8 @@ MonoBehaviour:
   loadingOverlayRoot: {fileID: 2012235050}
   loadingProgressFill: {fileID: 982837513}
   loadingProgressText: {fileID: 1876463371}
-  maxLoadingWaitSeconds: 10
-  minLoadingDisplaySeconds: 1.2
+  maxLoadingWaitSeconds: 25
+  minLoadingDisplaySeconds: 10
   welcomeText: {fileID: 1650352601}
   welcomeDisplayTime: 3
   levels:

@@ -112,27 +112,13 @@ public class GameManager : MonoBehaviour
     {
         Debug.Log("[GameManager] InitializeGame() arrancó.");
 
-        float gateStart = Time.realtimeSinceStartup;
-
         ApplyLevel(currentLevelIndex, isNewEntry: false);
 
-        Debug.Log("[GameManager] ApplyLevel listo, esperando WaitUntilReadyToReveal...");
+        Debug.Log("[GameManager] ApplyLevel listo, arrancando barra de carga...");
 
-        // Esperar (en tiempo real, sin importar la pausa) a que todo lo
-        // necesario esté realmente listo antes de destapar la pantalla.
-        yield return WaitUntilReadyToReveal();
+        yield return RunLoadingBar();
 
-        // Aunque todo haya estado listo casi al instante (típico si venís del
-        // menú, donde ya se precalentó JIT/assets), respetamos un mínimo de
-        // tiempo visible para que la pantalla de carga no sea un parpadeo.
-        float elapsed = Time.realtimeSinceStartup - gateStart;
-        if (elapsed < minLoadingDisplaySeconds)
-        {
-            Debug.Log($"[GameManager] Todo listo en {elapsed:F2}s, esperando el mínimo de {minLoadingDisplaySeconds}s...");
-            yield return new WaitForSecondsRealtime(minLoadingDisplaySeconds - elapsed);
-        }
-
-        Debug.Log($"[GameManager] WaitUntilReadyToReveal terminó. Time.timeScale antes de destapar = {Time.timeScale}");
+        Debug.Log($"[GameManager] Barra completa. Time.timeScale antes de destapar = {Time.timeScale}");
 
         if (loadingOverlayRoot != null)
             loadingOverlayRoot.SetActive(false);
@@ -146,23 +132,63 @@ public class GameManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Espera a que las dependencias de arranque estén listas (misiones de zona
-    /// generadas, managers de progresión presentes, etc.), con un tope de tiempo
-    /// para no dejar al jugador trabado si algo no llegó a inicializar.
-    /// Usa tiempo REAL (WaitForSecondsRealtime / chequeos por frame) porque
-    /// Time.timeScale está en 0 mientras tanto.
+    /// Barra de carga "creíble": SIEMPRE tarda al menos minLoadingDisplaySeconds
+    /// en llegar al 100%, sin importar qué tan rápido estén listas las
+    /// dependencias reales (típico si venís del menú, donde ya se precalentó
+    /// JIT/assets). Si las dependencias reales tardan MÁS que ese mínimo, la
+    /// barra se queda parada cerca del tope (no miente con un 100% prematuro)
+    /// hasta que de verdad estén listas, con un tope de seguridad para no
+    /// dejar al jugador colgado si algo falla.
     /// </summary>
-    private IEnumerator WaitUntilReadyToReveal()
+    private IEnumerator RunLoadingBar()
     {
-        // Un pequeño colchón fijo: deja que se asienten Awake/Start/OnEnable
-        // del resto de los ~400 objetos de la escena antes de evaluar nada.
-        SetLoadingProgress(0.15f, "Preparando");
-        yield return new WaitForSecondsRealtime(0.15f);
+        const float fakeCap = 0.92f;      // tope visual mientras esperamos lo real
+        const float finalRampSeconds = 0.2f; // remate rápido del 92% al 100%
 
-        SetLoadingProgress(0.35f, "Cargando datos");
+        bool dependenciesReady = false;
+        StartCoroutine(CheckDependenciesRoutine(() => dependenciesReady = true));
 
         float start = Time.realtimeSinceStartup;
-        while (Time.realtimeSinceStartup - start < maxLoadingWaitSeconds)
+
+        while (true)
+        {
+            float elapsed = Time.realtimeSinceStartup - start;
+
+            // Avance cosmético: sube parejo hacia fakeCap durante minLoadingDisplaySeconds.
+            float cosmetic = minLoadingDisplaySeconds > 0f
+                ? Mathf.Clamp01(elapsed / minLoadingDisplaySeconds) * fakeCap
+                : fakeCap;
+            SetLoadingProgress(cosmetic, "Cargando");
+
+            bool minTimePassed = elapsed >= minLoadingDisplaySeconds;
+            if (minTimePassed && dependenciesReady)
+                break;
+
+            if (elapsed >= maxLoadingWaitSeconds)
+            {
+                Debug.LogWarning("[GameManager] RunLoadingBar: se llegó al tope de espera, arrancando igual.");
+                break;
+            }
+
+            yield return null; // sigue tickeando aunque timeScale sea 0
+        }
+
+        // Remate: del valor actual a 100%, rápido y prolijo (no instantáneo, para que no se sienta como un salto brusco).
+        float fromValue = loadingProgressFill != null ? loadingProgressFill.fillAmount : fakeCap;
+        float rampStart = Time.realtimeSinceStartup;
+        while (Time.realtimeSinceStartup - rampStart < finalRampSeconds)
+        {
+            float t = (Time.realtimeSinceStartup - rampStart) / finalRampSeconds;
+            SetLoadingProgress(Mathf.Lerp(fromValue, 1f, t), "Listo");
+            yield return null;
+        }
+        SetLoadingProgress(1f, "Listo");
+    }
+
+    /// <summary>Chequea en segundo plano si las dependencias reales de arranque ya están listas.</summary>
+    private IEnumerator CheckDependenciesRoutine(System.Action onReady)
+    {
+        while (true)
         {
             bool zoneReady = ZoneMissionManager.Instance == null || ZoneMissionManager.Instance.ActiveMissions.Count > 0;
             bool dailyReady = DailyMissionManager.Instance != null;
@@ -170,19 +196,12 @@ public class GameManager : MonoBehaviour
 
             if (zoneReady && dailyReady && saveReady)
             {
-                SetLoadingProgress(1f, "¡Listo!");
+                onReady?.Invoke();
                 yield break;
             }
 
-            // Progreso aproximado (no hay una fuente 0..1 real acá, a diferencia de
-            // un AsyncOperation de carga de escena) para que la barra no quede quieta.
-            float t = Mathf.Clamp01((Time.realtimeSinceStartup - start) / maxLoadingWaitSeconds);
-            SetLoadingProgress(Mathf.Lerp(0.35f, 0.9f, t), "Cargando misiones");
-            yield return null; // sigue tickeando aunque timeScale sea 0
+            yield return null;
         }
-
-        SetLoadingProgress(1f, "Listo");
-        Debug.LogWarning("[GameManager] WaitUntilReadyToReveal: se llegó al tope de espera, arrancando igual.");
     }
 
     private void SetLoadingProgress(float value01, string label)
