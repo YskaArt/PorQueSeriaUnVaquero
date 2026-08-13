@@ -40,6 +40,8 @@ public class GameManager : MonoBehaviour
     [SerializeField] private Image loadingProgressFill;
     [Tooltip("Texto de progreso, ej. 'Cargando... 42%'. Opcional.")]
     [SerializeField] private TextMeshProUGUI loadingProgressText;
+    [Tooltip("Lista de paneles a precalentar (abrir y cerrar) durante la carga, para que su primer Awake/Start no coincida con el primer toque real del jugador.")]
+    [SerializeField] private UIWarmupList uiWarmupList;
 
     [Header("Loading Gate")]
     [Tooltip("Tiempo máximo de espera por las dependencias antes de arrancar igual, para no dejar al jugador colgado si algo falla.")]
@@ -112,9 +114,21 @@ public class GameManager : MonoBehaviour
     {
         Debug.Log("[GameManager] InitializeGame() arrancó.");
 
+        // Precalentar los Resources.LoadAll (misiones + upgrades) ANTES de aplicar
+        // el nivel, para que ese costo caiga bajo la pantalla de carga en vez de
+        // en medio del gameplay. Es barato/idempotente si ya estaban cacheados.
+        GameSaveManager.Instance?.WarmUp();
+        DailyMissionManager.Instance?.WarmUp();
+        ZoneMissionManager.Instance?.WarmUp();
+
         ApplyLevel(currentLevelIndex, isNewEntry: false);
 
-        Debug.Log("[GameManager] ApplyLevel listo, arrancando barra de carga...");
+        Debug.Log("[GameManager] ApplyLevel listo, precalentando paneles de UI...");
+
+        if (uiWarmupList != null)
+            yield return uiWarmupList.WarmUpAllRoutine();
+
+        Debug.Log("[GameManager] Paneles precalentados, arrancando barra de carga...");
 
         yield return RunLoadingBar();
 

@@ -65,15 +65,20 @@ public class UpgradeMenuController : MonoBehaviour
         btnBuy10.onClick.AddListener(() => SetPurchaseQuantity(10));
         btnBuy50.onClick.AddListener(() => SetPurchaseQuantity(50));
         btnBuyMax.onClick.AddListener(() => SetPurchaseQuantity(-1));
-    }
 
-    private void Start()
-    {
+        // Movido de Start() a Awake(): si se registraban en Start(), un toque
+        // que llegara antes de que este componente en particular corriera su
+        // Start() no hacía nada (no había listener todavía). Awake() se
+        // ejecuta antes y de forma más confiable (todos los Awake() de la
+        // escena terminan antes de que arranque cualquier Start()).
         if (opsButton != null) opsButton.onClick.AddListener(() => ShowPanel(opsPanel, opsScroll, true));
         if (generalButton != null) generalButton.onClick.AddListener(() => ShowPanel(generalPanel, generalScroll, false));
         if (settingsButton != null) settingsButton.onClick.AddListener(() => ShowPanel(settingsPanel, settingsScroll, false));
         if (closeButton != null) closeButton.onClick.AddListener(CloseMenu);
+    }
 
+    private void Start()
+    {
         ShowPanel(opsPanel, opsScroll, true);
 
         if (upgradeMenuPanel != null)

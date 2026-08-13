@@ -19,7 +19,7 @@ MonoBehaviour:
   hasBonus: 1
   firstBonusLevel: 10
   bonusInterval: 50
-  bonusCost: 150000
+  bonusCost: 15000
   bonusMultiplierPerBonus: 1.55
-  bonusCount: 1
+  bonusCount: 0
   gpsPerLevel: 1

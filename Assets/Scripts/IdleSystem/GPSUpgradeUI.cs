@@ -39,6 +39,7 @@ public class GPSUpgradeUI : UpgradeUIBase<GPSUpgradeData>
     [SerializeField] private Button buyBonusButton;
     [SerializeField] private TextMeshProUGUI bonusPriceText;
     [SerializeField] private TextMeshProUGUI bonusLabel; // <-- NUEVO: referencia al texto que indica "BONUS"
+    [SerializeField] private Image bonusFillImage;        // <-- NUEVO: barra de progreso hacia poder comprarlo (Image Type = Filled)
 
     protected override void Awake()
     {
@@ -118,14 +119,17 @@ public class GPSUpgradeUI : UpgradeUIBase<GPSUpgradeData>
             double cost = upgradeData.GetBonusCostFor(upgradeData.bonusCount + 1);
             bool affordable = GoldManager.Instance != null && GoldManager.Instance.CurrentGold >= cost;
 
-            // Mostrar el UI de bonus solo cuando el próximo bono esté disponible Y el jugador puede permitírselo
-            bool showAsPurchasable = available && affordable;
-            bonusContainer.SetActive(showAsPurchasable);
+            // Mostrar el UI de bonus apenas esté DESBLOQUEADO por nivel (10, 50, 100...),
+            // sin importar si ya lo podés pagar. La asequibilidad solo decide si el botón
+            // está habilitado o no -- antes se ocultaba el panel entero hasta poder pagarlo,
+            // lo cual hacía parecer que el desbloqueo por nivel no funcionaba (aparecía
+            // recién cuando juntabas oro suficiente, coincidiendo o no con el nivel real).
+            bonusContainer.SetActive(available);
 
-            if (showAsPurchasable)
+            if (available)
             {
                 bonusPriceText.text = $"Buy: {GoldManager.FormatNumber(cost)}";
-                buyBonusButton.interactable = true;
+                buyBonusButton.interactable = affordable;
                 if (bonusLabel != null)
                 {
                     // Mostrar el nombre de la mejora seguido de " Bonus X<multiplier>"
@@ -135,13 +139,27 @@ public class GPSUpgradeUI : UpgradeUIBase<GPSUpgradeData>
 
                     bonusLabel.text = $"{upgradeData.upgradeName} Bonus X{multStr}";
                 }
+
+                // Igual que en las mejoras normales (UpgradeUIBase.UpdateButtonVisuals):
+                // la barra se llena según cuánto oro tenés respecto al costo del bonus.
+                if (bonusFillImage != null && GoldManager.Instance != null)
+                {
+                    float progress = (cost <= 0) ? 1f : Mathf.Clamp01((float)(GoldManager.Instance.CurrentGold / cost));
+                    bonusFillImage.fillAmount = progress;
+                    bonusFillImage.color = affordable ? fillColorEnough : fillColorNotEnough;
+                }
             }
             else
             {
                 // mantener el botón desactivado cuando está oculto o no se puede comprar
                 buyBonusButton.interactable = false;
+
+                if (bonusFillImage != null)
+                {
+                    bonusFillImage.fillAmount = 0f;
+                    bonusFillImage.color = fillColorNotEnough;
+                }
             }
         }
     }
 }
-

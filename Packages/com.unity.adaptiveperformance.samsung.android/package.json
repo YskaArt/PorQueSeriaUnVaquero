@@ -1,0 +1,45 @@
+{
+  "name": "com.unity.adaptiveperformance.samsung.android",
+  "displayName": "Adaptive Performance Samsung Android",
+  "description": "The Adaptive Performance Samsung (Android) package is deprecated. Please use Adaptive Performance Android provider instead. \n\nBy installing this package, you agree to the terms and conditions of the Samsung GameSDK End User License Agreement found under \"View licenses\" above.",
+  "unity": "2022.3",
+  "version": "5.1.0",
+  "keywords": [
+    "mobile",
+    "adaptive",
+    "performance",
+    "utility",
+    "utilities",
+    "core",
+    "samsung",
+    "ap",
+    "provider",
+    "subsystem",
+    "gamesdk",
+    "VRR",
+    "indexer",
+    "scaler",
+    "boost",
+    "profiles",
+    "cluster",
+    "clusterinfo"
+  ],
+  "dependencies": {
+    "com.unity.modules.subsystems": "1.0.0",
+    "com.unity.modules.androidjni": "1.0.0",
+    "com.unity.adaptiveperformance": "5.1.0"
+  },
+  "_upm": {
+    "changelog": "### Changed\n* Samsung provider was deprecated. Please use Android provider instead.\n* minimum support is now Unity 2022.3"
+  },
+  "upmCi": {
+    "footprint": "b9c61a7ab7a2dcdad7ebe1f01545666e3c302ed1"
+  },
+  "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.adaptiveperformance.samsung.android@5.1/manual/index.html",
+  "repository": {
+    "url": "https://github.cds.internal.unity3d.com/unity/com.unity.adaptiveperformance.samsung.android.git",
+    "type": "git",
+    "revision": "50d6bbe49e2687ecd90cf35aa319e2d5e43a407c"
+  },
+  "_fingerprint": "d07c3e95be8a842b93761fc68c5c6fc87527b759"
+}

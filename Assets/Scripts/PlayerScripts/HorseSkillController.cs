@@ -58,11 +58,18 @@ public class HorseSkillController : MonoBehaviour
     private bool isMiniGameActive = false;
     public bool IsActive => isSkillActive;
 
-    private void Start()
+    private void Awake()
     {
+        // Movido de Start() a Awake(): mismo motivo que en UIControllerBase /
+        // UpgradeMenuController -- un toque antes de que ESTE Start() en
+        // particular corriera no hacía nada porque el listener todavía no
+        // existía. Awake() es más temprano y confiable.
         if (horseButton != null)
             horseButton.onClick.AddListener(ActivateHorse);
+    }
 
+    private void Start()
+    {
         if (cooldownImage != null)
             cooldownImage.fillAmount = 0f;
 

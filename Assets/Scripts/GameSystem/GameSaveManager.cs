@@ -53,6 +53,14 @@ public class GameSaveManager : MonoBehaviour
     }
 
     // Obtiene todos los upgrades disponibles usando varios métodos de detección
+    /// <summary>
+    /// Fuerza la carga/cacheo de todos los UpgradeBase (Resources.LoadAll) sin
+    /// aplicar nada todavía. Pensado para llamarse desde el loading gate de
+    /// GameManager, así el costo de este LoadAll no cae en un frame donde ya
+    /// importa la fluidez. Idempotente (si ya está cacheado, no repite el load).
+    /// </summary>
+    public void WarmUp() => GetAllUpgrades();
+
     private UpgradeBase[] GetAllUpgrades()
     {
         if (allUpgradesCache != null) return allUpgradesCache;

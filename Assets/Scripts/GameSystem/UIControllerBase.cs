@@ -31,7 +31,12 @@ public class UIControllerBase : MonoBehaviour
 
     public void ToggleMenu()
     {
-        if (MenuPanel != null)
+        if (MenuPanel != null) 
+        {
             MenuPanel.SetActive(!MenuPanel.activeSelf);
+
+            Debug.Log("Se pulso el boton");
+                };
+                
     }
 }

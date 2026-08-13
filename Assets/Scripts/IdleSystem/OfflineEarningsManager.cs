@@ -40,9 +40,9 @@ public class OfflineEarningsManager : MonoBehaviour
 
     [Header("Límites")]
     [Tooltip("Tope de horas offline que se toman en cuenta (evita cálculos absurdos si pasó mucho tiempo)")]
-    [SerializeField] private double maxOfflineHours = 12;
+    [SerializeField] private double maxOfflineHours = 8;
     [Tooltip("Si estuviste afuera menos que esto, directamente no se ofrece nada")]
-    [SerializeField] private double minOfflineSecondsToShow = 60;
+    [SerializeField] private double minOfflineSecondsToShow = 180; // 30 minutos
     [Tooltip("Oro mínimo (versión base) para que valga la pena mostrar el panel")]
     [SerializeField] private double minGoldToShow = 1;
 

@@ -126,15 +126,14 @@
       }
     },
     "com.unity.adaptiveperformance.samsung.android": {
-      "version": "5.1.0",
+      "version": "file:com.unity.adaptiveperformance.samsung.android",
       "depth": 0,
-      "source": "registry",
+      "source": "embedded",
       "dependencies": {
-        "com.unity.modules.androidjni": "1.0.0",
         "com.unity.modules.subsystems": "1.0.0",
+        "com.unity.modules.androidjni": "1.0.0",
         "com.unity.adaptiveperformance": "5.1.0"
-      },
-      "url": "https://packages.unity.com"
+      }
     },
     "com.unity.burst": {
       "version": "1.8.28",
