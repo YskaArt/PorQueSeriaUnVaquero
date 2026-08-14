@@ -15,7 +15,7 @@ MonoBehaviour:
   upgradeName: Cowboy Hat
   baseCost: 6
   costMultiplier: 1.15
-  currentLevel: 11
+  currentLevel: 0
   hasBonus: 1
   firstBonusLevel: 10
   bonusInterval: 50

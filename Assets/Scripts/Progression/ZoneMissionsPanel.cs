@@ -44,7 +44,6 @@ public class ZoneMissionsPanel : MonoBehaviour
         if (ZoneMissionManager.Instance != null)
             ZoneMissionManager.Instance.OnMissionsChanged += RebindAll;
 
-        if (panelRoot != null) panelRoot.SetActive(false);
         RebindAll();
     }
 
