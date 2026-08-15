@@ -191,7 +191,7 @@ public class ShopManager : MonoBehaviour
         {
             // Descontar el tiempo que el juego estuvo cerrado
             float offlineSeconds = 0f;
-            if (data.lastSaveTimestamp > 0)
+            if (data.lastSaveTimestamp != 0)
             {
                 var lastSave = DateTime.FromBinary(data.lastSaveTimestamp);
                 offlineSeconds = Mathf.Max(0f, (float)(DateTime.Now - lastSave).TotalSeconds);

@@ -76,7 +76,12 @@ public class MissionsHubPanel : MonoBehaviour
 
     private void Start()
     {
-        if (panelRoot != null) panelRoot.SetActive(false);
+        // No forzar panelRoot.SetActive(false) acá: como panelRoot puede ser
+        // el propio GameObject de este script (arranca inactivo por diseño),
+        // Start() recién corre la PRIMERA vez que algo lo activa -- que
+        // normalmente es el propio OpenPanel() del primer tap del jugador.
+        // Si acá lo forzábamos a cerrar, pisábamos ese primer OpenPanel()
+        // legítimo, y recién el segundo tap quedaba abierto de verdad.
     }
 
     private void Update()

@@ -42,7 +42,7 @@ public class OfflineEarningsManager : MonoBehaviour
     [Tooltip("Tope de horas offline que se toman en cuenta (evita cálculos absurdos si pasó mucho tiempo)")]
     [SerializeField] private double maxOfflineHours = 8;
     [Tooltip("Si estuviste afuera menos que esto, directamente no se ofrece nada")]
-    [SerializeField] private double minOfflineSecondsToShow = 180; // 30 minutos
+    [SerializeField] private double minOfflineSecondsToShow = 60; // 30 minutos
     [Tooltip("Oro mínimo (versión base) para que valga la pena mostrar el panel")]
     [SerializeField] private double minGoldToShow = 1;
 
@@ -65,22 +65,53 @@ public class OfflineEarningsManager : MonoBehaviour
     /// <summary>Llamado una vez por sesión desde GoldManager.Start(), después de aplicar el save.</summary>
     public void CheckForOfflineEarnings()
     {
-        if (checkedThisSession) return;
+        if (checkedThisSession)
+        {
+            Debug.Log("[OfflineEarnings] Corte: ya se chequeó esta sesión (checkedThisSession=true).");
+            return;
+        }
         checkedThisSession = true;
 
         var data = GameSaveManager.Instance != null ? GameSaveManager.Instance.LoadedData : null;
-        if (data == null || data.lastSaveTimestamp <= 0) return;
-        if (GoldManager.Instance == null) return;
+        if (data == null)
+        {
+            Debug.Log("[OfflineEarnings] Corte: GameSaveManager.Instance.LoadedData es null.");
+            return;
+        }
+        if (data.lastSaveTimestamp == 0)
+        {
+            Debug.Log("[OfflineEarnings] Corte: lastSaveTimestamp == 0 (nunca se guardó antes, o es la primera vez).");
+            return;
+        }
+        if (GoldManager.Instance == null)
+        {
+            Debug.Log("[OfflineEarnings] Corte: GoldManager.Instance es null.");
+            return;
+        }
 
         double gps = GoldManager.Instance.CurrentGoldPerSecond;
-        if (gps <= 0) return; // sin GPS todavía (jugador nuevo) -> no se ofrece nada
+        Debug.Log($"[OfflineEarnings] CurrentGoldPerSecond = {gps}");
+        if (gps <= 0)
+        {
+            Debug.Log("[OfflineEarnings] Corte: GPS actual es 0 (sin mejoras de GPS compradas todavía).");
+            return;
+        }
 
         DateTime lastSave;
         try { lastSave = DateTime.FromBinary(data.lastSaveTimestamp); }
-        catch { return; }
+        catch (Exception e)
+        {
+            Debug.Log($"[OfflineEarnings] Corte: excepción al parsear lastSaveTimestamp: {e.Message}");
+            return;
+        }
 
         double elapsedSeconds = (DateTime.Now - lastSave).TotalSeconds;
-        if (elapsedSeconds < minOfflineSecondsToShow) return;
+        Debug.Log($"[OfflineEarnings] lastSave={lastSave}, ahora={DateTime.Now}, elapsedSeconds={elapsedSeconds:F1}, minRequerido={minOfflineSecondsToShow}");
+        if (elapsedSeconds < minOfflineSecondsToShow)
+        {
+            Debug.Log("[OfflineEarnings] Corte: elapsedSeconds < minOfflineSecondsToShow.");
+            return;
+        }
 
         double cappedSeconds = Math.Min(elapsedSeconds, maxOfflineHours * 3600.0);
         double fullPotential = cappedSeconds * gps;
@@ -88,7 +119,12 @@ public class OfflineEarningsManager : MonoBehaviour
         double baseReward = fullPotential * baseRewardPercent;
         double adReward = fullPotential * adRewardPercent;
 
-        if (baseReward < minGoldToShow) return;
+        Debug.Log($"[OfflineEarnings] fullPotential={fullPotential:F1}, baseReward={baseReward:F1}, minGoldToShow={minGoldToShow}");
+        if (baseReward < minGoldToShow)
+        {
+            Debug.Log("[OfflineEarnings] Corte: baseReward < minGoldToShow.");
+            return;
+        }
 
         PendingBaseReward = baseReward;
         PendingAdReward = adReward;

@@ -124,11 +124,14 @@ public class GameSaveManager : MonoBehaviour
     // ================== SAVE ==================
     public void SaveGame()
     {
-        if (GoldManager.Instance == null) return;
+        bool goldManagerReady = GoldManager.Instance != null;
+        if (!goldManagerReady)
+            Debug.LogWarning("[GameSaveManager] SaveGame(): GoldManager.Instance todavía es null (orden de inicialización). " +
+                              "Se guarda igual usando los últimos datos cargados como fallback para no perder lastSaveTimestamp/nivel/etc.");
 
         GameSaveData saveData = new GameSaveData
         {
-            gold = GoldManager.Instance.CurrentGold,
+            gold = goldManagerReady ? GoldManager.Instance.CurrentGold : (loadedData != null ? loadedData.gold : 0),
             upgrades = new List<UpgradeSaveData>(),
             currentLevelIndex = GameManager.Instance != null ? GameManager.Instance.GetCurrentLevelIndex() : 0,
             lastScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name,
@@ -138,7 +141,9 @@ public class GameSaveManager : MonoBehaviour
             lastSaveTimestamp = DateTime.Now.ToBinary(),
 
             // Progresión (si el manager todavía no existe, conservar lo cargado)
-            lifetimeGoldThisRun = GoldManager.Instance.LifetimeGoldThisRun,
+            lifetimeGoldThisRun = goldManagerReady
+                                 ? GoldManager.Instance.LifetimeGoldThisRun
+                                 : (loadedData != null ? loadedData.lifetimeGoldThisRun : 0),
             masteryPoints = MasteryManager.Instance != null
                           ? MasteryManager.Instance.MasteryPoints
                           : (loadedData != null ? loadedData.masteryPoints : 0),
@@ -327,7 +332,7 @@ public class GameSaveManager : MonoBehaviour
     {
         if (loadedData == null) return 0;
 
-        if (loadedData.timeBeforeMiniGame > 0 && loadedData.lastSaveTimestamp > 0)
+        if (loadedData.timeBeforeMiniGame > 0 && loadedData.lastSaveTimestamp != 0)
         {
             DateTime lastSaveTime = DateTime.FromBinary(loadedData.lastSaveTimestamp);
             double secondsPassed = (DateTime.Now - lastSaveTime).TotalSeconds;
