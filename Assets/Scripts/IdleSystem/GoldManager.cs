@@ -62,6 +62,7 @@ public class GoldManager : MonoBehaviour
     private double masteryMultiplier = 1.0;
     private double boostMultiplier = 1.0;
 
+    public TextMeshProUGUI GoldText => goldText;
     public double CurrentGold => gold;
     public double CurrentGoldPerSecond => goldPerSecond;
     public double LifetimeGoldThisRun => lifetimeGoldThisRun;

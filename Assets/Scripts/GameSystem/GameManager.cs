@@ -29,6 +29,9 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
+    // true cuando termino la carga inicial, el fade y el mensaje de bienvenida (lo usa el tutorial).
+    public bool IsGameReady { get; private set; }
+
     [Header("Fade")]
     [SerializeField] private Image fadeImage;
     [SerializeField] private float fadeDuration = 1.0f;
@@ -142,6 +145,7 @@ public class GameManager : MonoBehaviour
         Debug.Log("[GameManager] Arrancando FadeIn().");
         yield return FadeIn();
         yield return ShowWelcomeMessage();
+        IsGameReady = true;
         Debug.Log("[GameManager] InitializeGame() completo.");
     }
 

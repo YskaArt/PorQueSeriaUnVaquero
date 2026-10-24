@@ -59,6 +59,11 @@ public class UpgradeMenuController : MonoBehaviour
     [SerializeField] private UpgradeUIBaseCommon[] allUpgradeUIs;
     [SerializeField] private UpgradeUIBaseCommon[] opsUpgradeUIs;
 
+    public Button CloseButton => closeButton;
+    public GameObject SettingsPanel => settingsPanel;
+    public GameObject MenuPanelObject => upgradeMenuPanel;
+    public ScrollRect SettingsScroll => settingsScroll;
+
     private void Awake()
     {
         btnBuy1.onClick.AddListener(() => SetPurchaseQuantity(1));

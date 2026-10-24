@@ -37,6 +37,9 @@ public class MiniBossController : MonoBehaviour
 
     public string BossId => bossId;
 
+    // false en el jefe de practica del tutorial: no da oro.
+    public bool GrantGoldReward { get; set; } = true;
+
     private Coroutine moveRoutine;
     private Action onDeath;
 
@@ -92,7 +95,7 @@ public class MiniBossController : MonoBehaviour
         if (isDead) yield break;
         isDead = true;
 
-        if (GoldManager.Instance != null)
+        if (GrantGoldReward && GoldManager.Instance != null)
         {
             double reward = 1.0;
 

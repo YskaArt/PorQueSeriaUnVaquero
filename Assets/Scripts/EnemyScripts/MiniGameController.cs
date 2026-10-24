@@ -60,6 +60,13 @@ public class MiniGameController : MonoBehaviour
     // --- Flags para evitar ejecuciones dobles ---
     private bool hasHandledBossDeath = false;
 
+    // --- Jefe de practica (tutorial): sin recompensas, sin misiones y sin cambio de nivel ---
+    private bool practiceMode = false;
+    private System.Action practiceFinished;
+
+    public bool IsMiniGameActive => isMiniGameActive;
+    public bool CanStartPractice => !isMiniGameActive && bossPrefabs != null && bossPrefabs.Count > 0 && bossStartPosition != null;
+
     private void Start()
     {
         if (tilemapScroller == null) tilemapScroller = FindAnyObjectByType<TilemapScroller>();
@@ -75,6 +82,43 @@ public class MiniGameController : MonoBehaviour
     {
         if (minigameTimerCoroutine != null) StopCoroutine(minigameTimerCoroutine);
         minigameTimerCoroutine = StartCoroutine(MinigameCountdown());
+    }
+
+    /// <summary>Cancela la cuenta regresiva del jefe (el tutorial la usa para que no interrumpa).</summary>
+    public void StopCountdown()
+    {
+        if (minigameTimerCoroutine != null) StopCoroutine(minigameTimerCoroutine);
+        minigameTimerCoroutine = null;
+    }
+
+    /// <summary>
+    /// Arranca un jefe de prueba para el tutorial. No da oro, no cuenta para misiones y al
+    /// derrotarlo el juego vuelve a la normalidad sin cambiar de nivel. onFinished se llama al terminar.
+    /// </summary>
+    public void StartPracticeBoss(System.Action onFinished)
+    {
+        if (!CanStartPractice) return;
+
+        StopCountdown();
+        practiceMode = true;
+        practiceFinished = onFinished;
+        StartMiniGame();
+    }
+
+    /// <summary>Corta el jefe de practica a la mitad (por ejemplo si se salta el tutorial).</summary>
+    public void CancelPractice()
+    {
+        if (!practiceMode) return;
+
+        practiceMode = false;
+        practiceFinished = null;
+
+        if (activeBossController != null) activeBossController.ClearDeathCallback();
+        if (activeBoss != null) Destroy(activeBoss);
+        activeBoss = null;
+        activeBossController = null;
+
+        StopMiniGame();
     }
 
     private IEnumerator MinigameCountdown()
@@ -133,6 +177,7 @@ public class MiniGameController : MonoBehaviour
             activeBossController = activeBoss.GetComponent<MiniBossController>();
             if (activeBossController != null)
             {
+                if (practiceMode) activeBossController.GrantGoldReward = false;
                 activeBossController.AssignDeathCallback(OnMiniBossDefeated);
 
                 // ASIGNAR target al shooter (evita buscarlo en cada hit)
@@ -159,6 +204,12 @@ public class MiniGameController : MonoBehaviour
         if (hasHandledBossDeath) return;
         hasHandledBossDeath = true;
 
+        if (practiceMode)
+        {
+            FinishPractice();
+            return;
+        }
+
         Debug.Log("[MiniGame] Boss derrotado. Iniciando cierre y cambio de nivel...");
 
         string defeatedBossId = activeBossController != null ? activeBossController.BossId : null;
@@ -181,6 +232,21 @@ public class MiniGameController : MonoBehaviour
         playerShooter?.SetTarget(null);
 
         StartCoroutine(HandleEndOfMinigame());
+    }
+
+    private void FinishPractice()
+    {
+        var finished = practiceFinished;
+        practiceMode = false;
+        practiceFinished = null;
+
+        if (activeBossController != null) activeBossController.ClearDeathCallback();
+        if (activeBoss != null) Destroy(activeBoss);
+        activeBoss = null;
+        activeBossController = null;
+
+        StopMiniGame();
+        finished?.Invoke();
     }
 
     private IEnumerator HandleEndOfMinigame()

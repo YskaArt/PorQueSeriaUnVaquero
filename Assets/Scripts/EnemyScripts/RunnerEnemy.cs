@@ -9,6 +9,7 @@
 //   simplemente desactiva el objeto.
 // ---------------------------------------------------------------
 
+using System;
 using UnityEngine;
 using static EnemySpawner;
 
@@ -26,6 +27,9 @@ public class RunnerEnemy : MonoBehaviour, IPoolResettable
     private float lifetimeTimer;
 
     public string EnemyTypeId => enemyTypeId;
+
+    // Se dispara cuando el jugador elimina un enemigo (lo usa el tutorial).
+    public static event Action<RunnerEnemy> OnAnyEnemyKilled;
 
     void Start()
     {
@@ -60,6 +64,8 @@ public class RunnerEnemy : MonoBehaviour, IPoolResettable
 
         DailyMissionManager.Instance?.ReportProgress(MissionType.KillEnemies, 1, enemyTypeId);
         ZoneMissionManager.Instance?.ReportProgress(MissionType.KillEnemies, 1, enemyTypeId);
+
+        OnAnyEnemyKilled?.Invoke(this);
 
         ReturnToPool();
     }

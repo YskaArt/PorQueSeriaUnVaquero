@@ -57,6 +57,7 @@ public class HorseSkillController : MonoBehaviour
     private bool isSkillActive = false;
     private bool isMiniGameActive = false;
     public bool IsActive => isSkillActive;
+    public Button HorseButton => horseButton;
 
     private void Awake()
     {
