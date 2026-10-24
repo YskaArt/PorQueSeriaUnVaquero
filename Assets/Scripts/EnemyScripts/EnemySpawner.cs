@@ -61,6 +61,9 @@ public class EnemySpawner : MonoBehaviour
 
     public bool IsHorseSkillActive => frenzyMode;
     public bool IsSpawning => isSpawning;
+
+    // Mientras sea true no aparecen items de bonus (el tutorial lo usa para que nada interrumpa).
+    public bool SuppressBonuses { get; set; }
     public float MinSpawnTime { get => minSpawnTime; set => minSpawnTime = value; }
     public float MaxSpawnTime { get => maxSpawnTime; set => maxSpawnTime = value; }
 
@@ -459,6 +462,8 @@ public class EnemySpawner : MonoBehaviour
 
     private void SpawnBonus()
     {
+        if (SuppressBonuses) return;
+
         // Check min interval
         if (Time.time - lastBonusSpawnTime < minBonusInterval) return;
 
@@ -570,12 +575,12 @@ public class EnemySpawner : MonoBehaviour
     }
 
     // New API: spawn a single random enemy immediately with specific speed
-    public void SpawnRandomEnemyImmediate(float speed = -1f)
+    public RunnerEnemy SpawnRandomEnemyImmediate(float speed = -1f)
     {
-        if (enemyPrefabs.Count == 0 || spawnPoints.Length == 0) return;
+        if (enemyPrefabs.Count == 0 || spawnPoints.Length == 0) return null;
 
         Transform free = GetRandomFreeSpawnPoint();
-        if (free == null) return;
+        if (free == null) return null;
 
         GameObject prefab = enemyPrefabs[Random.Range(0, enemyPrefabs.Count)];
         GameObject go = SpawnFromPool(prefab, free.position, Quaternion.identity);
@@ -583,6 +588,34 @@ public class EnemySpawner : MonoBehaviour
         runner?.SetFallSpeed(speed > 0f ? speed : NormalEnemySpeed);
 
         RecordSpawnAtPoint(free);
+        return runner;
+    }
+
+    /// <summary>
+    /// Suelta un item de bonus normal (no el de anuncio) en un carril libre. Lo usa el tutorial.
+    /// Devuelve null si no hay prefab o punto de spawn utilizable.
+    /// </summary>
+    public BonusPickup SpawnBonusForTutorial()
+    {
+        if (spawnPoints == null || spawnPoints.Length == 0) return null;
+
+        GameObject prefab = null;
+        foreach (var p in bonusPrefabs)
+        {
+            if (p != null && p.GetComponent<BonusPickup>() != null && p.GetComponent<RewardedBonusPickup>() == null)
+            {
+                prefab = p;
+                break;
+            }
+        }
+        if (prefab == null) return null;
+
+        Transform point = GetRandomFreeSpawnPoint();
+        if (point == null) point = spawnPoints[Random.Range(0, spawnPoints.Length)];
+
+        GameObject go = SpawnFromPool(prefab, point.position, Quaternion.identity);
+        RecordSpawnAtPoint(point);
+        return go.GetComponent<BonusPickup>();
     }
 
     // UTILS

@@ -20,6 +20,9 @@ public class UIControllerBase : MonoBehaviour
     [SerializeField] private GameObject MenuPanel;
     [SerializeField] private Button toggleButton;
 
+    public Button ToggleButton => toggleButton;
+    public GameObject MenuPanelObject => MenuPanel;
+
     protected virtual void Awake()
     {
         if (toggleButton != null)

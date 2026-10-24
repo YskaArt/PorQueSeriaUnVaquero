@@ -17,6 +17,7 @@
  */
 
 using UnityEngine;
+using UnityEngine.UI;
 
 public abstract class UpgradeUIBaseCommon : MonoBehaviour
 {
@@ -44,4 +45,7 @@ public abstract class UpgradeUIBaseCommon : MonoBehaviour
     /// Calcula cuántos niveles puede comprar el jugador con su oro actual.
     /// </summary>
     public abstract int GetMaxAffordableLevels();
+
+    /// <summary>Boton de compra de esta mejora (null si no tiene). Lo usa el tutorial para resaltarlo.</summary>
+    public virtual Button BuyButton => null;
 }

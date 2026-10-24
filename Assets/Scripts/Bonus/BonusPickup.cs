@@ -24,9 +24,25 @@ public class BonusPickup : MonoBehaviour, EnemySpawner.IPoolResettable
     // Internal flag protected para que la hija la reutilice
     protected bool picked = false;
 
+    // Se dispara cuando el jugador recoge un bonus (lo usa el tutorial).
+    public static event System.Action<BonusPickup> OnAnyBonusPicked;
+
+    // Modo tutorial: fuerza el tipo de bonus y permite no aplicar el efecto (repeticiones del tutorial).
+    private bool tutorialOverride;
+    private BonusManager.BonusType tutorialType;
+    private bool tutorialApplyEffect;
+
+    public void SetTutorialOverride(BonusManager.BonusType type, bool applyEffect)
+    {
+        tutorialOverride = true;
+        tutorialType = type;
+        tutorialApplyEffect = applyEffect;
+    }
+
     public void OnSpawn()
     {
         picked = false;
+        tutorialOverride = false;
         gameObject.SetActive(true);
         lifetimeTimer = lifetime;
         var ps = GetComponentsInChildren<ParticleSystem>(true);
@@ -80,6 +96,7 @@ public class BonusPickup : MonoBehaviour, EnemySpawner.IPoolResettable
         }
 
         picked = true;
+        OnAnyBonusPicked?.Invoke(this);
         float durationToUse = overrideDuration ? Mathf.Max(0.1f, customDuration) : -1f;
 
         HandlePicked(durationToUse);
@@ -93,7 +110,12 @@ public class BonusPickup : MonoBehaviour, EnemySpawner.IPoolResettable
     /// </summary>
     protected virtual void HandlePicked(float duration)
     {
-        if (BonusManager.Instance != null)
+        if (tutorialOverride)
+        {
+            if (tutorialApplyEffect && BonusManager.Instance != null)
+                BonusManager.Instance.ActivateBonus(tutorialType, duration);
+        }
+        else if (BonusManager.Instance != null)
             BonusManager.Instance.ActivateRandomBonus(duration);
         else
             Debug.LogWarning("[BonusPickup] No hay BonusManager.Instance para activar el bonus.");

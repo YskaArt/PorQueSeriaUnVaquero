@@ -230,6 +230,20 @@ public class GameSaveManager : MonoBehaviour
         return null;
     }
 
+    private void ResetAllUpgradesToZero()
+    {
+        var all = GetAllUpgrades();
+        if (all == null) return;
+
+        foreach (var up in all)
+        {
+            if (up == null) continue;
+            up.ApplyLoadedState(0);
+            if (up.HasBonus())
+                up.ApplyLoadedBonusCount(0);
+        }
+    }
+
     // ================== LOAD ==================
     public void LoadGame()
     {
@@ -238,6 +252,11 @@ public class GameSaveManager : MonoBehaviour
         {
             Debug.Log("[GameSaveManager] No hay datos guardados.");
             loadedData = new GameSaveData(); // inicializar vacío para evitar null checks
+
+            // Sin save, todas las mejoras arrancan en 0. Es necesario porque los upgrades son
+            // ScriptableObjects: en el editor conservan en memoria los niveles de la partida anterior
+            // aunque se haya borrado el save.
+            ResetAllUpgradesToZero();
             return;
         }
 

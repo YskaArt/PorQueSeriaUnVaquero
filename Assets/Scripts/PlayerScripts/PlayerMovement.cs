@@ -22,6 +22,7 @@
         * CenterToMiddleLane() centra manualmente al jugador.
 */
 
+using System;
 using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
@@ -47,6 +48,9 @@ public class PlayerMovement : MonoBehaviour
     private bool isSwiping = false;
 
     private Camera mainCam;
+
+    // Se dispara solo cuando el carril cambia de verdad (lo usa el tutorial).
+    public event Action<int> OnLaneChanged;
 
     void Awake()
     {
@@ -162,12 +166,19 @@ public class PlayerMovement : MonoBehaviour
             }
         }
 
-        currentLane = bestLane;
+        SetLane(bestLane);
     }
 
     void MoveLane(int direction)
     {
-        currentLane = Mathf.Clamp(currentLane + direction, 0, 2);
+        SetLane(Mathf.Clamp(currentLane + direction, 0, 2));
+    }
+
+    private void SetLane(int lane)
+    {
+        if (lane == currentLane) return;
+        currentLane = lane;
+        OnLaneChanged?.Invoke(lane);
     }
 
     public void CenterToMiddleLane()

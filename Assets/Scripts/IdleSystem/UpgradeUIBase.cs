@@ -164,6 +164,8 @@ public abstract class UpgradeUIBase<T> : UpgradeUIBaseCommon where T : UpgradeBa
 
     public override UpgradeBase GetUpgradeData() => upgradeData;
 
+    public override Button BuyButton => buyButton;
+
     protected virtual void UpdateButtonVisuals(int displayQty)
     {
         if (buyButton == null || GoldManager.Instance == null) return;
