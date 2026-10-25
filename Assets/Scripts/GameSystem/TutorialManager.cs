@@ -96,6 +96,7 @@ public class TutorialManager : MonoBehaviour
     private OverlayMode mode;
     private Func<RectTransform> targetFn;
     private Func<string> textFn;
+    private bool panelCentered;
     private string lastText;
     private bool nextClicked;
     private bool skipRequested;
@@ -368,25 +369,28 @@ public class TutorialManager : MonoBehaviour
     // =====================================================================
 
     /// <summary>Tarjeta de texto con boton. Espera a que el jugador lo toque.</summary>
-    private IEnumerator Card(string text, Func<RectTransform> target, OverlayMode overlay, string buttonLabel = null)
+    private IEnumerator Card(string text, Func<RectTransform> target, OverlayMode overlay, string buttonLabel = null,
+        bool centered = false)
     {
-        Show(() => text, target, overlay, true, buttonLabel ?? TutorialTexts.Next);
+        Show(() => text, target, overlay, true, buttonLabel ?? TutorialTexts.Next, centered);
         nextClicked = false;
         while (!nextClicked && !skipRequested)
             yield return null;
     }
 
     /// <summary>Muestra un mensaje y espera hasta que se cumpla la condicion (accion del jugador).</summary>
-    private IEnumerator WaitFor(Func<bool> condition, Func<string> text, Func<RectTransform> target, OverlayMode overlay)
+    private IEnumerator WaitFor(Func<bool> condition, Func<string> text, Func<RectTransform> target, OverlayMode overlay,
+        bool centered = false)
     {
-        Show(text, target, overlay, false, null);
+        Show(text, target, overlay, false, null, centered);
         while (!condition() && !skipRequested)
             yield return null;
     }
 
-    private IEnumerator Timed(Func<string> text, Func<RectTransform> target, OverlayMode overlay, float seconds)
+    private IEnumerator Timed(Func<string> text, Func<RectTransform> target, OverlayMode overlay, float seconds,
+        bool centered = false)
     {
-        Show(text, target, overlay, false, null);
+        Show(text, target, overlay, false, null, centered);
         float t = 0f;
         while (t < seconds && !skipRequested)
         {
@@ -452,7 +456,7 @@ public class TutorialManager : MonoBehaviour
             yield break;
         }
 
-        yield return Card(TutorialTexts.BossIntro, null, OverlayMode.Dim, TutorialTexts.Understood);
+        yield return Card(TutorialTexts.BossIntro, null, OverlayMode.Dim, TutorialTexts.Understood, centered: true);
         if (skipRequested) yield break;
 
         ClearScreenObjects();
@@ -460,10 +464,11 @@ public class TutorialManager : MonoBehaviour
         bool finished = false;
         miniGame.StartPracticeBoss(() => finished = true);
 
-        yield return WaitFor(() => finished, () => TutorialTexts.BossFight, null, OverlayMode.Passive);
+        yield return WaitFor(() => finished, () => TutorialTexts.BossFight, null, OverlayMode.Passive,
+            centered: true); // el jefe aparece arriba y el vaquero abajo: el centro es lo unico libre
 
         if (finished && !skipRequested)
-            yield return Timed(() => TutorialTexts.BossDone, null, OverlayMode.None, 3.5f);
+            yield return Timed(() => TutorialTexts.BossDone, null, OverlayMode.None, 3.5f, centered: true);
     }
 
     private bool pausedByTutorial;
@@ -493,9 +498,11 @@ public class TutorialManager : MonoBehaviour
             b.gameObject.SetActive(false);
     }
 
-    private void Show(Func<string> text, Func<RectTransform> target, OverlayMode overlay, bool withNext, string nextText)
+    private void Show(Func<string> text, Func<RectTransform> target, OverlayMode overlay, bool withNext, string nextText,
+        bool centered = false)
     {
         textFn = text;
+        panelCentered = centered;
         targetFn = target;
         mode = overlay;
         lastText = null;
@@ -834,6 +841,14 @@ public class TutorialManager : MonoBehaviour
         bool visible = textFn != null;
         panel.gameObject.SetActive(visible);
         if (!visible) return;
+
+        if (panelCentered)
+        {
+            panel.anchorMin = panel.anchorMax = new Vector2(0.5f, 0.5f);
+            panel.pivot = new Vector2(0.5f, 0.5f);
+            panel.anchoredPosition = Vector2.zero;
+            return;
+        }
 
         // El cuadro va del lado opuesto al objetivo para no taparlo.
         bool atBottom = hasHole && hole.center.y > 0f;

@@ -59,8 +59,14 @@ public class HorseSkillController : MonoBehaviour
     public bool IsActive => isSkillActive;
     public Button HorseButton => horseButton;
 
+    private void OnDestroy()
+    {
+        BonusPickup.SpeedMultiplier = 1f;
+    }
+
     private void Awake()
     {
+        BonusPickup.SpeedMultiplier = 1f;
         // Movido de Start() a Awake(): mismo motivo que en UIControllerBase /
         // UpgradeMenuController -- un toque antes de que ESTE Start() en
         // particular corriera no hacía nada porque el listener todavía no
@@ -106,6 +112,7 @@ public class HorseSkillController : MonoBehaviour
             horseButton.interactable = false;
 
         isSkillActive = true;
+        BonusPickup.SpeedMultiplier = enemySpeedMultiplier;
         playerAnimator?.SetBool("Horse", true);
 
         if (tilemapScroller != null)
@@ -132,6 +139,7 @@ public class HorseSkillController : MonoBehaviour
         if (!isSkillActive) return;
 
         isSkillActive = false;
+        BonusPickup.SpeedMultiplier = 1f;
         playerAnimator?.SetBool("Horse", false);
 
         if (tilemapScroller != null)

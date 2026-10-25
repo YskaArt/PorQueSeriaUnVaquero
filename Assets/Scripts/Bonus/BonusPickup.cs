@@ -24,6 +24,10 @@ public class BonusPickup : MonoBehaviour, EnemySpawner.IPoolResettable
     // Internal flag protected para que la hija la reutilice
     protected bool picked = false;
 
+    // Multiplicador global de velocidad de caida. La habilidad del caballo lo sube igual que a los
+    // enemigos, para que el item no parezca mas lento que el resto del mundo.
+    public static float SpeedMultiplier { get; set; } = 1f;
+
     // Se dispara cuando el jugador recoge un bonus (lo usa el tutorial).
     public static event System.Action<BonusPickup> OnAnyBonusPicked;
 
@@ -70,7 +74,7 @@ public class BonusPickup : MonoBehaviour, EnemySpawner.IPoolResettable
     private void Update()
     {
         if (!gameObject.activeInHierarchy) return;
-        transform.position += Vector3.down * fallSpeed * Time.deltaTime;
+        transform.position += Vector3.down * (fallSpeed * SpeedMultiplier) * Time.deltaTime;
         lifetimeTimer -= Time.deltaTime;
         if (lifetimeTimer <= 0f || transform.position.y <= minY) ReturnToPool();
     }
