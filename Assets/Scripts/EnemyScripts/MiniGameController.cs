@@ -154,6 +154,11 @@ public class MiniGameController : MonoBehaviour
 
         Debug.Log("[MiniGame] Iniciando minigame...");
 
+        // Primero cortar el caballo: al terminar restaura la velocidad del mundo, asi que si se hiciera
+        // despues de frenar el scroll, el camino volveria a moverse. Tambien evita guardar como
+        // "velocidad original" la velocidad doblada del caballo.
+        horseSkill?.ForceStopHorseSkill();
+
         if (tilemapScroller != null)
         {
             tilemapScroller.SaveOriginalSpeed();
@@ -161,7 +166,6 @@ public class MiniGameController : MonoBehaviour
         }
         else Debug.LogWarning("[MiniGame] No hay TilemapScroller activo.");
 
-        horseSkill?.ForceStopHorseSkill();
         horseSkill?.SetMiniGameActive(true);
 
         enemySpawner?.StopSpawning();

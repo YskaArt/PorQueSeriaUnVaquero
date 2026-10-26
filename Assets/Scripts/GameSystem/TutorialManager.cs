@@ -890,7 +890,7 @@ public class TutorialManager : MonoBehaviour
 
     // ---- fabricas de UI ----
 
-    private static Image CreateImage(Transform parent, string name, Color color, bool raycast)
+    internal static Image CreateImage(Transform parent, string name, Color color, bool raycast)
     {
         var go = new GameObject(name, typeof(RectTransform), typeof(Image));
         go.transform.SetParent(parent, false);
@@ -901,7 +901,7 @@ public class TutorialManager : MonoBehaviour
         return image;
     }
 
-    private static TextMeshProUGUI CreateText(Transform parent, string name, string text, TMP_FontAsset font, float size,
+    internal static TextMeshProUGUI CreateText(Transform parent, string name, string text, TMP_FontAsset font, float size,
         TextAlignmentOptions alignment)
     {
         var go = new GameObject(name, typeof(RectTransform));
@@ -915,7 +915,7 @@ public class TutorialManager : MonoBehaviour
         return tmp;
     }
 
-    private static Button CreateButton(Transform parent, string name, string label, TMP_FontAsset font, float fontSize,
+    internal static Button CreateButton(Transform parent, string name, string label, TMP_FontAsset font, float fontSize,
         Vector2 size, out TextMeshProUGUI labelText)
     {
         var go = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
@@ -946,7 +946,7 @@ public class TutorialManager : MonoBehaviour
 
     private string Fit(string text) => Fit(text, gameFont);
 
-    private static string Fit(string text, TMP_FontAsset font)
+    internal static string Fit(string text, TMP_FontAsset font)
     {
         if (string.IsNullOrEmpty(text)) return text;
         if (font != null && font.HasCharacters(text)) return text;

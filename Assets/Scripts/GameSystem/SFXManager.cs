@@ -24,6 +24,8 @@ public class SFXManager : MonoBehaviour
 {
     public static SFXManager Instance { get; private set; }
 
+    private const string VolumePrefKey = "SfxVolume";
+
     [System.Serializable]
     private class SFXData
     {
@@ -49,6 +51,9 @@ public class SFXManager : MonoBehaviour
 
         Instance = this;
         DontDestroyOnLoad(gameObject);
+
+        // Volumen elegido por el jugador (si existe); si no, el del inspector.
+        masterVolume = LoadSavedVolume(masterVolume);
 
         // Convertimos la lista en diccionario para accesos rápidos
         sfxDictionary = new Dictionary<string, SFXData>();
@@ -83,5 +88,11 @@ public class SFXManager : MonoBehaviour
     public void SetMasterVolume(float value)
     {
         masterVolume = Mathf.Clamp01(value);
+        PlayerPrefs.SetFloat(VolumePrefKey, masterVolume);
     }
+
+    public float MasterVolume => masterVolume;
+
+    public static float LoadSavedVolume(float fallback) =>
+        Mathf.Clamp01(PlayerPrefs.GetFloat(VolumePrefKey, fallback));
 }

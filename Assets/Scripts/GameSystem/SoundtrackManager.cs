@@ -5,6 +5,8 @@ public class SoundtrackManager : MonoBehaviour
 {
     public static SoundtrackManager Instance;
 
+    private const string VolumePrefKey = "MusicVolume";
+
     [Header("Audio Source")]
     [SerializeField] private AudioSource audioSource;
 
@@ -27,6 +29,9 @@ public class SoundtrackManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
+        // Volumen elegido por el jugador (si existe); si no, el del inspector.
+        musicVolume = LoadSavedVolume(musicVolume);
+
         if (audioSource == null)
             audioSource = gameObject.AddComponent<AudioSource>();
 
@@ -36,6 +41,8 @@ public class SoundtrackManager : MonoBehaviour
         // Reproducir automático si hay música asignada
         if (mainMusic != null)
             Play(mainMusic);
+
+        Debug.Log($"[SoundtrackManager] volumen={musicVolume} (guardado: {(PlayerPrefs.HasKey(VolumePrefKey) ? PlayerPrefs.GetFloat(VolumePrefKey).ToString() : "ninguno")}) | clip={(mainMusic != null ? mainMusic.name : "NINGUNO")} | sonando={audioSource.isPlaying}");
     }
 
     /// <summary>
@@ -61,7 +68,14 @@ public class SoundtrackManager : MonoBehaviour
 
         if (audioSource != null)
             audioSource.volume = musicVolume;
+
+        PlayerPrefs.SetFloat(VolumePrefKey, musicVolume);
     }
+
+    public float Volume => musicVolume;
+
+    public static float LoadSavedVolume(float fallback) =>
+        Mathf.Clamp01(PlayerPrefs.GetFloat(VolumePrefKey, fallback));
 
     /// <summary>
     /// Detiene la música completamente.
